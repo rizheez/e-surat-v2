@@ -1,0 +1,15 @@
+{
+    "agents": [
+        "codex"
+    ],
+    "cloud": false,
+    "packages": [
+        "spatie/laravel-permission"
+    ],
+    "skills": [
+        "laravel-best-practices",
+        "inertia-react-development",
+        "tailwindcss-development",
+        "laravel-permission-development"
+    ]
+}

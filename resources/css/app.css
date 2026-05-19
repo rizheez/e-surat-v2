@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        background: #eef7f8;
+    }
+
+    ::selection {
+        background: rgba(255, 121, 0, 0.3);
+        color: #064e5a;
+    }
+}
