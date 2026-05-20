@@ -27,11 +27,11 @@ class DispositionReminderTest extends TestCase
         $this->seed(DatabaseSeeder::class);
     }
 
-    public function test_due_soon_dispositions_send_h2_reminder_once_per_day(): void
+    public function test_due_soon_dispositions_send_h1_reminder_once_per_day(): void
     {
         $sender = User::query()->where('email', 'admin@esurat.test')->firstOrFail();
         $recipient = $this->makeUser('dosen', true);
-        $disposition = $this->makeDisposition($sender, $recipient, now()->addDays(2)->toDateString());
+        $disposition = $this->makeDisposition($sender, $recipient, now()->addDay()->toDateString());
 
         $service = app(DispositionReminderService::class);
         $sentFirst = $service->sendDueSoonReminders(now()->startOfDay());
@@ -44,7 +44,7 @@ class DispositionReminderTest extends TestCase
             $recipient->notifications()
                 ->where('type', DispositionDeadlineReminder::class)
                 ->where('data->disposition_id', $disposition->id)
-                ->where('data->reminder_type', DispositionReminderService::H2_REMINDER)
+                ->where('data->reminder_type', DispositionReminderService::H1_REMINDER)
                 ->where('data->reminder_date', now()->toDateString())
                 ->count(),
         );
@@ -54,7 +54,7 @@ class DispositionReminderTest extends TestCase
     {
         $sender = User::query()->where('email', 'admin@esurat.test')->firstOrFail();
         $recipient = $this->makeUser('dosen', true);
-        $this->makeDisposition($sender, $recipient, now()->addDays(2)->toDateString());
+        $this->makeDisposition($sender, $recipient, now()->addDay()->toDateString());
 
         $sent = app(DispositionReminderService::class)->sendDueSoonReminders(now()->startOfDay(), dryRun: true);
 
@@ -67,8 +67,8 @@ class DispositionReminderTest extends TestCase
         $sender = User::query()->where('email', 'admin@esurat.test')->firstOrFail();
         $activeRecipient = $this->makeUser('dosen', true);
         $inactiveRecipient = $this->makeUser('dosen', false);
-        $completed = $this->makeDisposition($sender, $activeRecipient, now()->addDays(2)->toDateString(), DispositionStatus::Selesai);
-        $inactive = $this->makeDisposition($sender, $inactiveRecipient, now()->addDays(2)->toDateString());
+        $completed = $this->makeDisposition($sender, $activeRecipient, now()->addDay()->toDateString(), DispositionStatus::Selesai);
+        $inactive = $this->makeDisposition($sender, $inactiveRecipient, now()->addDay()->toDateString());
 
         $sent = app(DispositionReminderService::class)->sendDueSoonReminders(now()->startOfDay());
 
@@ -81,7 +81,7 @@ class DispositionReminderTest extends TestCase
     {
         $sender = User::query()->where('email', 'admin@esurat.test')->firstOrFail();
         $recipient = $this->makeUser('dosen', true);
-        $this->makeDisposition($sender, $recipient, now()->addDays(2)->toDateString());
+        $this->makeDisposition($sender, $recipient, now()->addDay()->toDateString());
 
         $this->artisan('dispositions:send-deadline-reminders', [
             '--date' => now()->toDateString(),

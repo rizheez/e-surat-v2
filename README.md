@@ -62,7 +62,7 @@ Command scheduler yang tersedia:
 
 | Command | Fungsi | Jadwal |
 | --- | --- | --- |
-| `dispositions:send-deadline-reminders` | Mengirim reminder H-2 untuk disposisi yang mendekati batas waktu | Setiap hari 07:00 |
+| `dispositions:send-deadline-reminders` | Mengirim reminder H-1 untuk disposisi yang mendekati batas waktu | Setiap hari 07:00 |
 | `outgoing-letters:send-approval-reminders` | Mengirim reminder approval/revisi surat keluar yang tertahan minimal 2 hari | Setiap hari 08:00 |
 
 Definisi jadwal ada di [routes/console.php](routes/console.php).
@@ -107,8 +107,8 @@ php artisan dispositions:send-deadline-reminders --date=2026-05-20
 
 Jika `--date` tidak diisi, sistem memakai tanggal hari ini.
 
-Reminder disposisi mencari disposisi yang batas waktunya H+2 dari `--date`.
-Contoh: jika `--date=2026-05-20`, maka target disposisi adalah yang batas waktunya `2026-05-22`.
+Reminder disposisi mencari disposisi yang batas waktunya H+1 dari `--date`.
+Contoh: jika `--date=2026-05-20`, maka target disposisi adalah yang batas waktunya `2026-05-21`.
 
 ### Reminder approval surat keluar
 
