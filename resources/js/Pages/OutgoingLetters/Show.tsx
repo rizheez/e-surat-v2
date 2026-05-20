@@ -1,3 +1,4 @@
+import ActivityTimeline from '@/Components/ActivityTimeline';
 import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import StatusBadge from '@/Components/StatusBadge';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
@@ -102,46 +103,17 @@ export default function Show({ letter, activities }: Props) {
                             <CardTitle>Riwayat Persetujuan</CardTitle>
                         </CardHeader>
                         <CardContent className="pt-5">
-                            <div className="space-y-4">
-                                {activities.length > 0 ? (
-                                    activities.map((activity, index) => {
-                                        const Icon = resolveActivityIcon(activity.log_name);
-
-                                        return (
-                                            <div key={activity.id} className="flex gap-3">
-                                                <div className="flex flex-col items-center">
-                                                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-cyan-50 text-cyan-800">
-                                                        <Icon className="h-4 w-4" />
-                                                    </div>
-                                                    {index < activities.length - 1 && (
-                                                        <div className="mt-2 h-full w-px bg-slate-200" />
-                                                    )}
-                                                </div>
-                                                <div className="min-w-0 flex-1 rounded-lg border border-slate-200 p-3">
-                                                    <div className="flex flex-wrap items-center justify-between gap-2">
-                                                        <p className="text-sm font-medium text-slate-950">
-                                                            {activity.description}
-                                                        </p>
-                                                        <p className="text-xs text-slate-500">
-                                                            {formatDateTime(activity.created_at)}
-                                                        </p>
-                                                    </div>
-                                                    <p className="mt-1 text-xs text-slate-500">
-                                                        {activity.user?.name ?? 'Sistem'}
-                                                    </p>
-                                                    {typeof activity.properties?.approval_note === 'string' && (
-                                                        <p className="mt-2 rounded-md bg-rose-50 px-2 py-1 text-xs text-rose-700">
-                                                            {activity.properties.approval_note}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })
-                                ) : (
-                                    <p className="text-sm text-slate-500">Belum ada aktivitas tercatat.</p>
-                                )}
-                            </div>
+                            <ActivityTimeline
+                                items={activities}
+                                resolveIcon={resolveActivityIcon}
+                                renderMeta={(activity) =>
+                                    typeof activity.properties?.approval_note === 'string' ? (
+                                        <p className="mt-2 rounded-md bg-rose-50 px-2 py-1 text-xs text-rose-700">
+                                            {activity.properties.approval_note}
+                                        </p>
+                                    ) : null
+                                }
+                            />
                         </CardContent>
                     </Card>
                 </section>
