@@ -86,6 +86,8 @@ export default function Dashboard({
                 ))}
             </div>
 
+            <AttentionAlerts alerts={alerts} />
+
             <div className="mt-6 grid gap-4 xl:grid-cols-3">
                 <section className="rounded-md border border-gray-200 bg-white p-4 shadow-sm xl:col-span-2">
                     <h2 className="font-semibold">Penerimaan dan Penyusunan Surat</h2>
@@ -216,7 +218,7 @@ export default function Dashboard({
                                     <div>
                                         <p className="font-medium">{letter.perihal}</p>
                                         <p className="mt-1 text-sm text-gray-500">
-                                            {letter.nomor_agenda} - {letter.asal_surat}
+                                            {letter.nomor_agenda} - {letter.asal_surat} - {formatDate(letter.tanggal_diterima)}
                                         </p>
                                     </div>
                                     <StatusBadge value={letter.status} />
@@ -240,7 +242,7 @@ export default function Dashboard({
                                     <div>
                                         <p className="font-medium">{disposition.incomingLetter?.perihal}</p>
                                         <p className="mt-1 text-sm text-gray-500">
-                                            Dari {disposition.sender?.name} - {disposition.batas_waktu ?? 'Tanpa batas waktu'}
+                                            Dari {disposition.sender?.name} - {disposition.batas_waktu ? formatDate(disposition.batas_waktu) : 'Tanpa batas waktu'}
                                         </p>
                                     </div>
                                     <StatusBadge value={disposition.status} />
@@ -266,7 +268,7 @@ export default function Dashboard({
                                     <div>
                                         <p className="font-medium">{letter.perihal}</p>
                                         <p className="mt-1 text-sm text-gray-500">
-                                            {letter.nomor_surat_keluar} - {letter.signatory?.name ?? '-'}
+                                            {letter.nomor_surat_keluar} - {letter.signatory?.name ?? '-'} - {formatDate(letter.tanggal_surat)}
                                         </p>
                                     </div>
                                     <StatusBadge value={letter.status} />
@@ -282,28 +284,52 @@ export default function Dashboard({
                 </section>
             </div>
 
-            {(alerts.dueSoon.length > 0 || alerts.staleLetters.length > 0 || alerts.stuckApprovals.length > 0) && (
-                <section className="mt-6 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                    <h2 className="font-semibold">Perlu Perhatian</h2>
-                    {alerts.dueSoon.map((item) => (
-                        <p key={`due-${item.id}`} className="mt-2">
-                            Disposisi "{item.incomingLetter?.perihal}" mendekati batas waktu {item.batas_waktu}.
-                        </p>
-                    ))}
-                    {alerts.staleLetters.map((item) => (
-                        <p key={`stale-${item.id}`} className="mt-2">
-                            Surat "{item.perihal}" belum didisposisi lebih dari 3 hari.
-                        </p>
-                    ))}
-                    {alerts.stuckApprovals.map((item) => (
-                        <p key={`approval-${item.id}`} className="mt-2">
-                            Approval surat "{item.perihal}" masih tertahan pada {item.signatory?.name ?? 'penandatangan'}.
-                        </p>
-                    ))}
-                </section>
-            )}
         </AuthenticatedLayout>
     );
+}
+
+function AttentionAlerts({ alerts }: { alerts: Props['alerts'] }) {
+    if (alerts.dueSoon.length === 0 && alerts.staleLetters.length === 0 && alerts.stuckApprovals.length === 0) {
+        return null;
+    }
+
+    return (
+        <section className="mt-6 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <div className="flex items-center gap-2">
+                <TriangleAlert className="h-4 w-4" />
+                <h2 className="font-semibold">Perlu Perhatian</h2>
+            </div>
+            <div className="mt-3 space-y-2">
+                {alerts.dueSoon.map((item) => (
+                    <p key={`due-${item.id}`}>
+                        Disposisi "{item.incomingLetter?.perihal ?? '-'}" mendekati batas waktu {formatDate(item.batas_waktu)}.
+                    </p>
+                ))}
+                {alerts.staleLetters.map((item) => (
+                    <p key={`stale-${item.id}`}>
+                        Surat "{item.perihal}" belum didisposisi sejak {formatDate(item.tanggal_diterima)}.
+                    </p>
+                ))}
+                {alerts.stuckApprovals.map((item) => (
+                    <p key={`approval-${item.id}`}>
+                        Approval surat "{item.perihal}" masih tertahan pada {item.signatory?.name ?? 'penandatangan'} sejak {formatDate(item.approval_requested_at)}.
+                    </p>
+                ))}
+            </div>
+        </section>
+    );
+}
+
+function formatDate(value?: string | null) {
+    if (!value) {
+        return '-';
+    }
+
+    return new Intl.DateTimeFormat('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+    }).format(new Date(value));
 }
 
 function MonitorCard({
