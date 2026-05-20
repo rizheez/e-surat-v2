@@ -158,6 +158,30 @@ class LetterNumberReservationTest extends TestCase
         ])->assertSessionHasErrors(['quantity']);
     }
 
+    public function test_reserved_number_can_be_marked_as_used_manual(): void
+    {
+        $manager = $this->makeUser('admin-persuratan');
+        $category = LetterCategory::query()->where('kode', 'SK')->firstOrFail();
+        $reservation = LetterNumberReservation::create([
+            'nomor_surat' => 'SK/10/UNU-KT/05/2026',
+            'tanggal_surat' => '2026-05-21',
+            'kategori_surat_id' => $category->id,
+            'jenis_dokumen' => 'Transkrip',
+            'perihal' => 'Transkrip mahasiswa',
+            'status' => 'reserved',
+            'created_by' => $manager->id,
+        ]);
+
+        $this->actingAs($manager)
+            ->patch(route('letter-number-reservations.mark-used-manual', $reservation))
+            ->assertSessionHas('success');
+
+        $reservation->refresh();
+
+        $this->assertSame('used_manual', $reservation->status);
+        $this->assertNotNull($reservation->used_at);
+    }
+
     public function test_reserved_number_can_be_voided_before_use(): void
     {
         $manager = $this->makeUser('admin-persuratan');

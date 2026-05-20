@@ -110,6 +110,22 @@ class LetterNumberReservationController extends Controller
         ));
     }
 
+    public function markUsedManual(Request $request, LetterNumberReservation $letterNumberReservation): RedirectResponse
+    {
+        abort_unless($request->user()?->can('manage outgoing letters'), 403);
+
+        if ($letterNumberReservation->status !== 'reserved') {
+            return back()->with('error', 'Hanya nomor reservasi yang belum dipakai yang dapat ditandai sebagai dipakai manual.');
+        }
+
+        $letterNumberReservation->update([
+            'status' => 'used_manual',
+            'used_at' => now(),
+        ]);
+
+        return back()->with('success', 'Nomor surat berhasil ditandai sebagai dipakai manual.');
+    }
+
     public function void(Request $request, LetterNumberReservation $letterNumberReservation): RedirectResponse
     {
         abort_unless($request->user()?->can('manage outgoing letters'), 403);

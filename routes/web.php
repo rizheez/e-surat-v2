@@ -56,6 +56,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('letter-number-reservations/import', [LetterNumberReservationImportController::class, 'store'])->middleware('permission:manage outgoing letters')->name('letter-number-reservations.import');
     Route::post('letter-number-reservations/batch', [LetterNumberReservationController::class, 'storeBatch'])->middleware('permission:manage outgoing letters')->name('letter-number-reservations.batch-store');
     Route::post('letter-number-reservations', [LetterNumberReservationController::class, 'store'])->middleware('permission:manage outgoing letters')->name('letter-number-reservations.store');
+    Route::patch('letter-number-reservations/{letterNumberReservation}/mark-used-manual', [LetterNumberReservationController::class, 'markUsedManual'])->middleware('permission:manage outgoing letters')->name('letter-number-reservations.mark-used-manual');
     Route::patch('letter-number-reservations/{letterNumberReservation}/void', [LetterNumberReservationController::class, 'void'])->middleware('permission:manage outgoing letters')->name('letter-number-reservations.void');
     Route::get('reports/letter-number-reservations.xlsx', [ReportExportController::class, 'letterNumberReservations'])->middleware('permission:manage outgoing letters')->name('reports.letter-number-reservations.xlsx');
     Route::get('reports/outgoing-letters.xlsx', [ReportExportController::class, 'outgoing'])->middleware('permission:export reports')->name('reports.outgoing-letters.xlsx');

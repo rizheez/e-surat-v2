@@ -278,6 +278,15 @@ export default function Index({ reservations, filters, categories, statuses }: P
                                                                 Pakai
                                                             </Link>
                                                         </Button>
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => router.patch(route('letter-number-reservations.mark-used-manual', reservation.id), {}, { preserveScroll: true })}
+                                                        >
+                                                            <Clipboard className="h-4 w-4" />
+                                                            Dipakai Manual
+                                                        </Button>
                                                         <Button type="button" variant="destructive" size="sm" onClick={() => router.patch(route('letter-number-reservations.void', reservation.id), {}, { preserveScroll: true })}>
                                                             <XCircle className="h-4 w-4" />
                                                             Batal
