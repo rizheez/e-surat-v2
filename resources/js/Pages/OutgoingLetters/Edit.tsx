@@ -6,20 +6,26 @@ import { Select } from '@/Components/ui/select';
 import { Textarea } from '@/Components/ui/textarea';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import GeneratedLetterPreview from '@/Pages/OutgoingLetters/Partials/GeneratedLetterPreview';
-import { DEFAULT_SALAM_PEMBUKA } from '@/Pages/OutgoingLetters/Partials/letterContent';
-import { LetterCategory, OutgoingLetter, User } from '@/types';
+import {
+    DEFAULT_PENUTUP_TEXT,
+    DEFAULT_SALAM_PEMBUKA,
+    DEFAULT_TEMBUSAN_TEXT,
+} from '@/Pages/OutgoingLetters/Partials/letterContent';
+import { LetterCategory, LetterTemplate, OutgoingLetter, User } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, ExternalLink, FileText, Save, Upload } from 'lucide-react';
-import { FormEvent, useEffect } from 'react';
+import { FormEvent, useEffect, useMemo } from 'react';
 
 type Props = {
     letter: OutgoingLetter;
     categories: LetterCategory[];
+    letterTemplates: LetterTemplate[];
     signatories: User[];
 };
 
-export default function Edit({ letter, categories, signatories }: Props) {
+export default function Edit({ letter, categories, letterTemplates, signatories }: Props) {
     const form = useForm({
+        letter_template_id: '',
         nomor_surat_keluar: letter.nomor_surat_keluar,
         tanggal_surat: letter.tanggal_surat.slice(0, 10),
         tujuan_surat: letter.tujuan_surat,
@@ -43,8 +49,17 @@ export default function Edit({ letter, categories, signatories }: Props) {
 
     const selectedCategory =
         categories.find((category) => String(category.id) === form.data.kategori_surat_id) ?? null;
+    const selectedTemplate =
+        letterTemplates.find((template) => String(template.id) === form.data.letter_template_id) ?? null;
     const selectedSignatory =
         signatories.find((user) => String(user.id) === form.data.signatory_user_id) ?? null;
+    const templatesForCategory = useMemo(
+        () =>
+            form.data.kategori_surat_id
+                ? letterTemplates.filter((template) => String(template.kategori_surat_id) === form.data.kategori_surat_id)
+                : letterTemplates,
+        [letterTemplates, form.data.kategori_surat_id],
+    );
 
     useEffect(() => {
         if (!form.data.kategori_surat_id || !form.data.tanggal_surat) {
@@ -80,6 +95,29 @@ export default function Edit({ letter, categories, signatories }: Props) {
             penandatangan_jabatan: selectedSignatory?.position?.nama ?? '',
         }));
     }, [selectedSignatory]);
+
+    useEffect(() => {
+        if (!selectedTemplate) {
+            return;
+        }
+
+        form.setData((data) => ({
+            ...data,
+            kategori_surat_id: String(selectedTemplate.kategori_surat_id),
+            tujuan_surat: selectedTemplate.tujuan_surat ?? '',
+            perihal: selectedTemplate.perihal,
+            ringkasan: selectedTemplate.ringkasan ?? '',
+            lampiran_text: selectedTemplate.lampiran_text ?? '-',
+            kepada_text: selectedTemplate.kepada_text ?? '',
+            lokasi_tujuan: selectedTemplate.lokasi_tujuan ?? '',
+            salam_pembuka: selectedTemplate.salam_pembuka ?? DEFAULT_SALAM_PEMBUKA,
+            isi_surat: selectedTemplate.isi_surat ?? '',
+            lampiran_detail: selectedTemplate.lampiran_detail ?? '',
+            penutup_text: selectedTemplate.penutup_text ?? DEFAULT_PENUTUP_TEXT,
+            tembusan_text: selectedTemplate.tembusan_text ?? DEFAULT_TEMBUSAN_TEXT,
+            content_mode: 'generate',
+        }));
+    }, [selectedTemplate]);
 
     function submit(event: FormEvent) {
         event.preventDefault();
@@ -169,6 +207,25 @@ export default function Edit({ letter, categories, signatories }: Props) {
                                                 Jenis kategori: {selectedCategory.deskripsi ?? '-'}
                                             </p>
                                         )}
+                                    </>
+                                </Field>
+
+                                <Field label="Template surat">
+                                    <>
+                                        <Select
+                                            value={form.data.letter_template_id}
+                                            onChange={(event) => form.setData('letter_template_id', event.target.value)}
+                                        >
+                                            <option value="">Tanpa template</option>
+                                            {templatesForCategory.map((template) => (
+                                                <option key={template.id} value={template.id}>
+                                                    {template.nama}
+                                                </option>
+                                            ))}
+                                        </Select>
+                                        <p className="mt-2 text-xs text-slate-500">
+                                            Memilih template akan mengganti isi naskah generated dan tetap bisa Anda ubah lagi.
+                                        </p>
                                     </>
                                 </Field>
 

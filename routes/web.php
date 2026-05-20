@@ -87,6 +87,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('master-data/natures', [MasterDataController::class, 'natures'])->middleware('permission:manage master data')->name('master-data.natures.index');
     Route::get('master-data/archive-classifications', [MasterDataController::class, 'archiveClassifications'])->middleware('permission:manage master data')->name('master-data.archive-classifications.index');
     Route::get('master-data/instruction-templates', [MasterDataController::class, 'instructionTemplates'])->middleware('permission:manage master data')->name('master-data.instruction-templates.index');
+    Route::get('master-data/letter-templates', [MasterDataController::class, 'letterTemplates'])->middleware('permission:manage master data')->name('master-data.letter-templates.index');
     Route::post('master-data/units', [MasterDataController::class, 'storeUnit'])->middleware('permission:manage master data')->name('master-data.units.store');
     Route::match(['put', 'patch'], 'master-data/units/{unit}', [MasterDataController::class, 'updateUnit'])->middleware('permission:manage master data')->name('master-data.units.update');
     Route::delete('master-data/units/{unit}', [MasterDataController::class, 'destroyUnit'])->middleware('permission:manage master data')->name('master-data.units.destroy');
@@ -105,6 +106,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('master-data/instruction-templates', [MasterDataController::class, 'storeInstructionTemplate'])->middleware('permission:manage master data')->name('master-data.instruction-templates.store');
     Route::match(['put', 'patch'], 'master-data/instruction-templates/{instructionTemplate}', [MasterDataController::class, 'updateInstructionTemplate'])->middleware('permission:manage master data')->name('master-data.instruction-templates.update');
     Route::delete('master-data/instruction-templates/{instructionTemplate}', [MasterDataController::class, 'destroyInstructionTemplate'])->middleware('permission:manage master data')->name('master-data.instruction-templates.destroy');
+    Route::post('master-data/letter-templates', [MasterDataController::class, 'storeLetterTemplate'])->middleware('permission:manage master data')->name('master-data.letter-templates.store');
+    Route::match(['put', 'patch'], 'master-data/letter-templates/{letterTemplate}', [MasterDataController::class, 'updateLetterTemplate'])->middleware('permission:manage master data')->name('master-data.letter-templates.update');
+    Route::delete('master-data/letter-templates/{letterTemplate}', [MasterDataController::class, 'destroyLetterTemplate'])->middleware('permission:manage master data')->name('master-data.letter-templates.destroy');
 
     Route::get('users', [UserController::class, 'index'])->middleware('permission:manage users')->name('users.index');
     Route::get('users/create', [UserController::class, 'create'])->middleware('permission:manage users')->name('users.create');

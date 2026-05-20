@@ -6,6 +6,7 @@ use App\Enums\OutgoingLetterStatus;
 use App\Http\Requests\OutgoingLetterRequest;
 use App\Models\ActivityLog;
 use App\Models\LetterCategory;
+use App\Models\LetterTemplate;
 use App\Models\OutgoingLetter;
 use App\Models\User;
 use App\Notifications\OutgoingLetterApproved;
@@ -66,6 +67,7 @@ class OutgoingLetterController extends Controller
 
         return Inertia::render('OutgoingLetters/Create', [
             'categories' => LetterCategory::orderBy('kode')->get(),
+            'letterTemplates' => LetterTemplate::with('category')->orderBy('nama')->get(),
             'signatories' => $this->signatories(),
             'statuses' => array_map(fn ($status) => ['value' => $status->value, 'label' => $status->label()], OutgoingLetterStatus::cases()),
             'initialNumber' => null,
@@ -186,6 +188,7 @@ class OutgoingLetterController extends Controller
         return Inertia::render('OutgoingLetters/Edit', [
             'letter' => $this->presentLetter($outgoingLetter),
             'categories' => LetterCategory::orderBy('kode')->get(),
+            'letterTemplates' => LetterTemplate::with('category')->orderBy('nama')->get(),
             'signatories' => $this->signatories(),
             'statuses' => array_map(fn ($status) => ['value' => $status->value, 'label' => $status->label()], OutgoingLetterStatus::cases()),
         ]);

@@ -62,6 +62,24 @@ export interface DispositionInstructionTemplate {
     isi_instruksi: string;
 }
 
+export interface LetterTemplate {
+    id: number;
+    nama: string;
+    kategori_surat_id: number;
+    tujuan_surat?: string | null;
+    perihal: string;
+    ringkasan?: string | null;
+    lampiran_text?: string | null;
+    kepada_text?: string | null;
+    lokasi_tujuan?: string | null;
+    salam_pembuka?: string | null;
+    isi_surat?: string | null;
+    lampiran_detail?: string | null;
+    penutup_text?: string | null;
+    tembusan_text?: string | null;
+    category?: LetterCategory | null;
+}
+
 export interface IncomingLetter {
     id: number;
     nomor_agenda: string;

@@ -5,4 +5,5 @@ export const masterDataNavigation = [
     { label: 'Sifat Surat', route: 'master-data.natures.index' },
     { label: 'Klasifikasi Arsip', route: 'master-data.archive-classifications.index' },
     { label: 'Template Instruksi', route: 'master-data.instruction-templates.index' },
+    { label: 'Template Surat', route: 'master-data.letter-templates.index' },
 ] as const;

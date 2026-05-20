@@ -7,11 +7,13 @@ use App\Http\Requests\StoreLetterNatureRequest;
 use App\Http\Requests\StorePositionRequest;
 use App\Http\Requests\StoreArchiveClassificationRequest;
 use App\Http\Requests\StoreDispositionInstructionRequest;
+use App\Http\Requests\StoreLetterTemplateRequest;
 use App\Http\Requests\StoreUnitRequest;
 use App\Models\ArchiveClassification;
 use App\Models\DispositionInstruction;
 use App\Models\LetterCategory;
 use App\Models\LetterNature;
+use App\Models\LetterTemplate;
 use App\Models\Position;
 use App\Models\Unit;
 use Illuminate\Database\QueryException;
@@ -68,6 +70,13 @@ class MasterDataController extends Controller
         ]);
     }
 
+    public function letterTemplates(): Response
+    {
+        return Inertia::render('MasterData/LetterTemplates', [
+            ...$this->sharedPayload(),
+        ]);
+    }
+
     private function sharedPayload(): array
     {
         return [
@@ -77,6 +86,7 @@ class MasterDataController extends Controller
             'natures' => LetterNature::orderBy('nama')->get(),
             'archiveClassifications' => ArchiveClassification::orderBy('nama')->get(),
             'instructionTemplates' => DispositionInstruction::orderBy('judul')->get(),
+            'letterTemplates' => LetterTemplate::with('category')->orderBy('nama')->get(),
         ];
     }
 
@@ -225,6 +235,29 @@ class MasterDataController extends Controller
             fn () => $instructionTemplate->delete(),
             'Template instruksi berhasil dihapus.',
             'Template instruksi tidak dapat dihapus karena masih dipakai data lain.'
+        );
+    }
+
+    public function storeLetterTemplate(StoreLetterTemplateRequest $request): RedirectResponse
+    {
+        LetterTemplate::create($request->validated());
+
+        return back()->with('success', 'Template surat berhasil ditambahkan.');
+    }
+
+    public function updateLetterTemplate(StoreLetterTemplateRequest $request, LetterTemplate $letterTemplate): RedirectResponse
+    {
+        $letterTemplate->update($request->validated());
+
+        return back()->with('success', 'Template surat berhasil diperbarui.');
+    }
+
+    public function destroyLetterTemplate(LetterTemplate $letterTemplate): RedirectResponse
+    {
+        return $this->deleteRecord(
+            fn () => $letterTemplate->delete(),
+            'Template surat berhasil dihapus.',
+            'Template surat tidak dapat dihapus karena masih dipakai data lain.'
         );
     }
 
