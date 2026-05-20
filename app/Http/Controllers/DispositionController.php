@@ -58,7 +58,10 @@ class DispositionController extends Controller
             ->when($request->status, fn ($query, string $status) => $query->where('status', $status));
 
         return Inertia::render('Dispositions/Index', [
-            'dispositions' => $query->latest('tanggal_disposisi')->paginate(10)->withQueryString(),
+            'dispositions' => $query->latest('tanggal_disposisi')
+                ->paginate(10)
+                ->withQueryString()
+                ->through(fn (Disposition $disposition) => $this->presentDisposition($disposition)),
             'filters' => $request->only(['search', 'status']),
             'statuses' => $this->statuses(),
         ]);
@@ -457,6 +460,7 @@ class DispositionController extends Controller
     private function presentDisposition(Disposition $disposition): array
     {
         $data = $disposition->toArray();
+        $data['incomingLetter'] = $disposition->incomingLetter?->toArray();
         $data['followups'] = $disposition->followups
             ->map(fn ($followup) => DispositionFollowupController::presentFollowup($followup))
             ->values()

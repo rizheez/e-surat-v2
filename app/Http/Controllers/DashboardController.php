@@ -93,7 +93,9 @@ class DashboardController extends Controller
                 ->whereNull('parent_disposition_id')
                 ->latest('tanggal_disposisi')
                 ->limit(5)
-                ->get(),
+                ->get()
+                ->map(fn (Disposition $disposition) => $this->presentDisposition($disposition))
+                ->values(),
             'latestApprovals' => OutgoingLetter::with(['createdBy', 'signatory.position', 'signatory.unit'])
                 ->where('content_mode', 'generate')
                 ->whereIn('status', [
@@ -110,7 +112,9 @@ class DashboardController extends Controller
                     ->where('status', '!=', DispositionStatus::Selesai->value)
                     ->whereBetween('batas_waktu', [now()->toDateString(), now()->addDays(2)->toDateString()])
                     ->limit(5)
-                    ->get(),
+                    ->get()
+                    ->map(fn (Disposition $disposition) => $this->presentDisposition($disposition))
+                    ->values(),
                 'staleLetters' => IncomingLetter::where('status', IncomingLetterStatus::Baru->value)
                     ->whereDate('tanggal_diterima', '<=', now()->subDays(3)->toDateString())
                     ->limit(5)
@@ -124,5 +128,13 @@ class DashboardController extends Controller
                     ->get(),
             ],
         ]);
+    }
+
+    private function presentDisposition(Disposition $disposition): array
+    {
+        $data = $disposition->toArray();
+        $data['incomingLetter'] = $disposition->incomingLetter?->toArray();
+
+        return $data;
     }
 }
