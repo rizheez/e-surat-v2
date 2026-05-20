@@ -30,8 +30,8 @@ export default function GeneratedLetterPreview({ data }: { data: PreviewData }) 
     const letterDate = formatDate(data.tanggal_surat);
 
     return (
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
-            <div className="relative mx-auto aspect-[210/297] w-full max-w-[420px] bg-white px-8 pb-16 pt-5 text-[11px] leading-5 text-slate-900 shadow-sm">
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-100 p-3">
+            <div className="relative mx-auto aspect-[210/297] w-full max-w-[520px] bg-white px-10 pb-20 pt-6 text-[13px] leading-6 text-slate-900 shadow-sm">
                 <img src="/brand/header-kop.png" alt="Header kop surat UNU Kaltim" className="w-full" />
 
                 <div className="mt-7 flex items-start justify-between gap-4">
@@ -57,7 +57,7 @@ export default function GeneratedLetterPreview({ data }: { data: PreviewData }) 
                     {data.salam_pembuka && <p className="font-semibold">{data.salam_pembuka}</p>}
 
                     <div
-                        className="prose prose-sm max-w-none text-justify prose-p:my-2 prose-p:indent-8 prose-ul:my-2 prose-ol:my-2 prose-table:my-2 prose-table:w-full prose-table:border-collapse prose-td:border prose-td:border-slate-300 prose-td:p-1 prose-th:border prose-th:border-slate-300 prose-th:p-1"
+                        className="letter-body-preview text-justify [&_p]:my-2 [&_p]:indent-8 [&_ol]:my-2 [&_ol]:pl-5 [&_ul]:my-2 [&_ul]:pl-5 [&_table]:my-2 [&_table]:w-full [&_table]:border-collapse [&_td]:border [&_td]:border-slate-300 [&_td]:p-1 [&_th]:border [&_th]:border-slate-300 [&_th]:p-1"
                         dangerouslySetInnerHTML={{ __html: bodyHtml || '<p>-</p>' }}
                     />
 
@@ -96,7 +96,7 @@ export default function GeneratedLetterPreview({ data }: { data: PreviewData }) 
                     </div>
 
                     {ccItems.length > 0 && (
-                        <div className="text-[10px] leading-4">
+                        <div className="text-[11px] leading-4">
                             <p className="font-semibold">Tembusan:</p>
                             <ol className="mt-1 list-decimal space-y-0.5 pl-5">
                                 {ccItems.map((item, index) => (
