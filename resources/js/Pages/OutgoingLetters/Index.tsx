@@ -38,6 +38,7 @@ type Props = {
 export default function Index({ letters, filters, categories, statuses }: Props) {
     const { auth } = usePage<PageProps>().props;
     const canManageOutgoingLetters = auth.permissions.includes('manage outgoing letters');
+    const canExportReports = auth.permissions.includes('export reports');
     const [rejectingLetter, setRejectingLetter] = useState<OutgoingLetter | null>(null);
     const rejectForm = useForm({ approval_note: '' });
 
@@ -81,6 +82,8 @@ export default function Index({ letters, filters, categories, statuses }: Props)
         router.get(route('outgoing-letters.index'), {}, { preserveScroll: true, replace: true });
     }
 
+    const exportUrl = route('reports.outgoing-letters.csv', filters);
+
     return (
         <AuthenticatedLayout
             header={
@@ -92,22 +95,32 @@ export default function Index({ letters, filters, categories, statuses }: Props)
                             Kelola draft, pengiriman, persetujuan, dan pengarsipan naskah keluar.
                         </p>
                     </div>
-                    {canManageOutgoingLetters && (
-                        <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
+                        {canExportReports && (
                             <Button asChild variant="outline">
-                                <Link href={route('outgoing-letters.monitor')}>
-                                    <PanelTopOpen className="h-4 w-4" />
-                                    Monitor Persetujuan
-                                </Link>
+                                <a href={exportUrl}>
+                                    <Download className="h-4 w-4" />
+                                    Export CSV
+                                </a>
                             </Button>
-                            <Button asChild>
-                                <Link href={route('outgoing-letters.create')}>
-                                    <Plus className="h-4 w-4" />
-                                    Susun Draft
-                                </Link>
-                            </Button>
-                        </div>
-                    )}
+                        )}
+                        {canManageOutgoingLetters && (
+                            <>
+                                <Button asChild variant="outline">
+                                    <Link href={route('outgoing-letters.monitor')}>
+                                        <PanelTopOpen className="h-4 w-4" />
+                                        Monitor Persetujuan
+                                    </Link>
+                                </Button>
+                                <Button asChild>
+                                    <Link href={route('outgoing-letters.create')}>
+                                        <Plus className="h-4 w-4" />
+                                        Susun Draft
+                                    </Link>
+                                </Button>
+                            </>
+                        )}
+                    </div>
                 </div>
             }
         >

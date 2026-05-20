@@ -20,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -311,6 +312,8 @@ class OutgoingLetterController extends Controller
             'status' => OutgoingLetterStatus::Disetujui,
             'approved_at' => now(),
             'approval_note' => null,
+            'verification_token' => $outgoingLetter->verification_token ?: Str::random(64),
+            'verification_token_generated_at' => $outgoingLetter->verification_token_generated_at ?: now(),
         ])->save();
         $this->logActivity('approved', $outgoingLetter, $request->user(), $request->user()->name.' menyetujui surat keluar.');
 

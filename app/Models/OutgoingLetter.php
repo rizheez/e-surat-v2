@@ -32,6 +32,8 @@ class OutgoingLetter extends Model
         'approval_requested_at',
         'approved_at',
         'approval_note',
+        'verification_token',
+        'verification_token_generated_at',
         'created_by',
     ];
 
@@ -42,6 +44,7 @@ class OutgoingLetter extends Model
             'status' => OutgoingLetterStatus::class,
             'approval_requested_at' => 'datetime',
             'approved_at' => 'datetime',
+            'verification_token_generated_at' => 'datetime',
         ];
     }
 

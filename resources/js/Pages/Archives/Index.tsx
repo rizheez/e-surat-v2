@@ -1,8 +1,10 @@
 import Pagination from '@/Components/Pagination';
 import StatusBadge from '@/Components/StatusBadge';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { IncomingLetter, LetterCategory, LetterNature, OutgoingLetter, Paginator } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
+import { Button } from '@/Components/ui/button';
+import { IncomingLetter, LetterCategory, LetterNature, OutgoingLetter, PageProps, Paginator } from '@/types';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Download } from 'lucide-react';
 
 type Props = {
     incomingLetters: Paginator<IncomingLetter>;
@@ -13,6 +15,10 @@ type Props = {
 };
 
 export default function Index({ incomingLetters, outgoingLetters, filters, categories, natures }: Props) {
+    const { auth } = usePage<PageProps>().props;
+    const canExportReports = auth.permissions.includes('export reports');
+    const exportUrl = route('reports.archives.csv', filters);
+
     function setFilter(name: string, value: string) {
         router.get(route('archives.index'), { ...filters, [name]: value }, { preserveState: true, preserveScroll: true, replace: true });
     }
@@ -20,10 +26,20 @@ export default function Index({ incomingLetters, outgoingLetters, filters, categ
     return (
         <AuthenticatedLayout
             header={
-                <div>
-                    <p className="text-sm font-medium text-slate-500">Arsip dan Referensi</p>
-                    <h1 className="text-2xl font-semibold">Arsip Digital</h1>
-                    <p className="mt-1 text-sm text-gray-500">Akses baca untuk penerimaan dan naskah keluar yang sudah diarsipkan.</p>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <p className="text-sm font-medium text-slate-500">Arsip dan Referensi</p>
+                        <h1 className="text-2xl font-semibold">Arsip Digital</h1>
+                        <p className="mt-1 text-sm text-gray-500">Akses baca untuk penerimaan dan naskah keluar yang sudah diarsipkan.</p>
+                    </div>
+                    {canExportReports && (
+                        <Button asChild variant="outline">
+                            <a href={exportUrl}>
+                                <Download className="h-4 w-4" />
+                                Export CSV
+                            </a>
+                        </Button>
+                    )}
                 </div>
             }
         >

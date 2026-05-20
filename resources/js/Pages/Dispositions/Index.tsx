@@ -13,9 +13,9 @@ import {
     TableRow,
 } from '@/Components/ui/table';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Disposition, Option, Paginator } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
-import { Eye, Radar, RotateCcw, Search } from 'lucide-react';
+import { Disposition, Option, PageProps, Paginator } from '@/types';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Download, Eye, Radar, RotateCcw, Search } from 'lucide-react';
 
 type Props = {
     dispositions: Paginator<Disposition>;
@@ -24,6 +24,9 @@ type Props = {
 };
 
 export default function Index({ dispositions, filters, statuses }: Props) {
+    const { auth } = usePage<PageProps>().props;
+    const canExportReports = auth.permissions.includes('export reports');
+
     function setFilter(name: string, value: string) {
         router.get(
             route('dispositions.index'),
@@ -36,6 +39,8 @@ export default function Index({ dispositions, filters, statuses }: Props) {
         router.get(route('dispositions.index'), {}, { preserveScroll: true, replace: true });
     }
 
+    const exportUrl = route('reports.dispositions.csv', filters);
+
     return (
         <AuthenticatedLayout
             header={
@@ -47,12 +52,22 @@ export default function Index({ dispositions, filters, statuses }: Props) {
                             Pantau instruksi, penerima, batas waktu, dan tindak lanjut.
                         </p>
                     </div>
-                    <Button asChild variant="outline">
-                        <Link href={route('dispositions.monitor')}>
-                            <Radar className="h-4 w-4" />
-                            Monitor Disposisi
-                        </Link>
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                        {canExportReports && (
+                            <Button asChild variant="outline">
+                                <a href={exportUrl}>
+                                    <Download className="h-4 w-4" />
+                                    Export CSV
+                                </a>
+                            </Button>
+                        )}
+                        <Button asChild variant="outline">
+                            <Link href={route('dispositions.monitor')}>
+                                <Radar className="h-4 w-4" />
+                                Monitor Disposisi
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
             }
         >

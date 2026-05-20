@@ -15,7 +15,7 @@ import {
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { IncomingLetter, LetterNature, Option, PageProps, Paginator } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Eye, FileText, Pencil, Plus, RotateCcw, Search, Send } from 'lucide-react';
+import { Download, Eye, FileText, Pencil, Plus, RotateCcw, Search, Send } from 'lucide-react';
 
 type Props = {
     letters: Paginator<IncomingLetter>;
@@ -29,6 +29,7 @@ export default function Index({ letters, filters, natures, statuses }: Props) {
     const canCreateIncomingLetter = auth.permissions.includes('create incoming letters');
     const canCreateDisposition = auth.permissions.includes('create disposition');
     const canUpdateIncomingLetter = auth.permissions.includes('update incoming letters');
+    const canExportReports = auth.permissions.includes('export reports');
 
     function setFilter(name: string, value: string) {
         router.get(
@@ -42,6 +43,8 @@ export default function Index({ letters, filters, natures, statuses }: Props) {
         router.get(route('incoming-letters.index'), {}, { preserveScroll: true, replace: true });
     }
 
+    const exportUrl = route('reports.incoming-letters.csv', filters);
+
     return (
         <AuthenticatedLayout
             header={
@@ -53,14 +56,24 @@ export default function Index({ letters, filters, natures, statuses }: Props) {
                             Kelola agenda penerimaan, file PDF, dan proses disposisi.
                         </p>
                     </div>
-                    {canCreateIncomingLetter && (
-                        <Button asChild>
-                            <Link href={route('incoming-letters.create')}>
-                                <Plus className="h-4 w-4" />
-                                Catat Surat
-                            </Link>
-                        </Button>
-                    )}
+                    <div className="flex flex-wrap gap-2">
+                        {canExportReports && (
+                            <Button asChild variant="outline">
+                                <a href={exportUrl}>
+                                    <Download className="h-4 w-4" />
+                                    Export CSV
+                                </a>
+                            </Button>
+                        )}
+                        {canCreateIncomingLetter && (
+                            <Button asChild>
+                                <Link href={route('incoming-letters.create')}>
+                                    <Plus className="h-4 w-4" />
+                                    Catat Surat
+                                </Link>
+                            </Button>
+                        )}
+                    </div>
                 </div>
             }
         >

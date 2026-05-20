@@ -9,6 +9,8 @@ use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OutgoingLetterController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicLetterVerificationController;
+use App\Http\Controllers\ReportExportController;
 use App\Http\Controllers\UserController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +25,9 @@ Route::get('/', function () {
     ]);
 });
 
+Route::get('/verify/outgoing-letter/{token}', PublicLetterVerificationController::class)
+    ->name('public.outgoing-letters.verify');
+
 Route::get('/dashboard', DashboardController::class)
     ->middleware(['auth', 'verified', 'permission:view dashboard'])
     ->name('dashboard');
@@ -33,6 +38,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('incoming-letters', [IncomingLetterController::class, 'index'])->middleware('permission:view incoming letters')->name('incoming-letters.index');
+    Route::get('reports/incoming-letters.csv', [ReportExportController::class, 'incoming'])->middleware('permission:export reports')->name('reports.incoming-letters.csv');
     Route::get('incoming-letters/create', [IncomingLetterController::class, 'create'])->middleware('permission:create incoming letters')->name('incoming-letters.create');
     Route::get('incoming-letters/{incomingLetter}/edit', [IncomingLetterController::class, 'edit'])->middleware('permission:update incoming letters')->name('incoming-letters.edit');
     Route::post('incoming-letters', [IncomingLetterController::class, 'store'])->middleware('permission:create incoming letters')->name('incoming-letters.store');
@@ -42,6 +48,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('incoming-letters/{incomingLetter}', [IncomingLetterController::class, 'destroy'])->middleware('permission:delete incoming letters')->name('incoming-letters.destroy');
 
     Route::get('outgoing-letters', [OutgoingLetterController::class, 'index'])->middleware('permission:view outgoing letters')->name('outgoing-letters.index');
+    Route::get('reports/outgoing-letters.csv', [ReportExportController::class, 'outgoing'])->middleware('permission:export reports')->name('reports.outgoing-letters.csv');
     Route::get('outgoing-letters/approvals', [OutgoingLetterController::class, 'approvals'])->middleware('permission:view outgoing letters')->name('outgoing-letters.approvals');
     Route::get('outgoing-letters/monitor', [OutgoingLetterController::class, 'monitor'])->middleware('permission:view outgoing letters')->name('outgoing-letters.monitor');
     Route::get('outgoing-letters/number-preview', [OutgoingLetterController::class, 'numberPreview'])->middleware('permission:manage outgoing letters')->name('outgoing-letters.number-preview');
@@ -59,6 +66,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('outgoing-letters/{outgoingLetter}', [OutgoingLetterController::class, 'destroy'])->middleware('permission:manage outgoing letters')->name('outgoing-letters.destroy');
 
     Route::get('dispositions', [DispositionController::class, 'index'])->middleware('permission:view disposition')->name('dispositions.index');
+    Route::get('reports/dispositions.csv', [ReportExportController::class, 'dispositions'])->middleware('permission:export reports')->name('reports.dispositions.csv');
     Route::get('dispositions/monitor', [DispositionController::class, 'monitor'])->middleware('permission:view disposition')->name('dispositions.monitor');
     Route::get('dispositions/create', [DispositionController::class, 'create'])->middleware('permission:create disposition')->name('dispositions.create');
     Route::post('dispositions', [DispositionController::class, 'store'])->middleware('permission:create disposition')->name('dispositions.store');
@@ -69,6 +77,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('disposition-followups/{followup}/file', [DispositionFollowupController::class, 'file'])->middleware(['permission:view disposition', 'signed'])->name('dispositions.followups.file');
 
     Route::get('archives', ArchiveController::class)->middleware('permission:view archives')->name('archives.index');
+    Route::get('reports/archives.csv', [ReportExportController::class, 'archives'])->middleware('permission:export reports')->name('reports.archives.csv');
     Route::post('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::post('notifications/{notification}/read', [NotificationController::class, 'read'])->name('notifications.read');
     Route::get('master-data', [MasterDataController::class, 'index'])->middleware('permission:manage master data')->name('master-data.index');

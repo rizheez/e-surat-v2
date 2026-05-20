@@ -12,16 +12,11 @@ class SignatureQrCodeService
 {
     public function generateSvg(OutgoingLetter $letter): ?string
     {
-        if (!$letter->approved_at || !$letter->signatory) {
+        if (!$letter->approved_at || !$letter->signatory || !$letter->verification_token) {
             return null;
         }
 
-        $payload = implode("\n", [
-            'Dokumen e-Surat UNU Kaltim',
-            'Nomor: '.$letter->nomor_surat_keluar,
-            'Penandatangan: '.$letter->signatory->name,
-            'Disetujui: '.$letter->approved_at->format('Y-m-d H:i:s'),
-        ]);
+        $payload = route('public.outgoing-letters.verify', $letter->verification_token);
 
         $renderer = new ImageRenderer(
             new RendererStyle(140, 0),

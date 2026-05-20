@@ -40,6 +40,7 @@ class DatabaseSeeder extends Seeder
             'view outgoing letters',
             'manage outgoing letters',
             'view archives',
+            'export reports',
         ];
 
         foreach ($permissions as $permission) {
@@ -60,6 +61,7 @@ class DatabaseSeeder extends Seeder
             'view outgoing letters',
             'manage outgoing letters',
             'view archives',
+            'export reports',
         ]);
 
         foreach (['pimpinan-universitas', 'pimpinan-fakultas', 'pimpinan-prodi', 'pimpinan-unit'] as $roleName) {

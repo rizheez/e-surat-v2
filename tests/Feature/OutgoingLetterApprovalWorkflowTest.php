@@ -76,6 +76,8 @@ class OutgoingLetterApprovalWorkflowTest extends TestCase
 
         $this->assertSame(OutgoingLetterStatus::Disetujui, $letter->status);
         $this->assertNotNull($letter->approved_at);
+        $this->assertNotNull($letter->verification_token);
+        $this->assertNotNull($letter->verification_token_generated_at);
         Notification::assertSentTo($creator, OutgoingLetterApproved::class);
 
         $this->actingAs($creator)
