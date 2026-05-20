@@ -32,7 +32,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
                     promotion: false,
                     statusbar: false,
                     plugins: 'advlist autolink lists table',
-                    toolbar: 'undo redo | bold italic underline | alignleft aligncenter alignright alignjustify | bullist numlist | table | removeformat',
+                    toolbar: 'undo redo | bold italic underline | alignleft aligncenter alignright alignjustify | outdent indent | bullist numlist | table | removeformat',
                     placeholder,
                     content_style: 'body { font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.6; } p { margin: 0 0 10px; }',
                 }}
