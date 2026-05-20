@@ -103,6 +103,24 @@ export interface IncomingLetter {
     dispositions?: Disposition[];
 }
 
+export interface LetterNumberReservation {
+    id: number;
+    nomor_surat: string;
+    tanggal_surat: string;
+    kategori_surat_id: number;
+    jenis_dokumen?: string | null;
+    perihal: string;
+    tujuan_surat?: string | null;
+    catatan?: string | null;
+    status: 'reserved' | 'used' | 'void';
+    created_by: number;
+    used_by_outgoing_letter_id?: number | null;
+    used_at?: string | null;
+    category?: LetterCategory | null;
+    createdBy?: User | null;
+    usedByOutgoingLetter?: OutgoingLetter | null;
+}
+
 export interface OutgoingLetter {
     id: number;
     nomor_surat_keluar: string;

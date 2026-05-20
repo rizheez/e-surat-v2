@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DispositionController;
 use App\Http\Controllers\DispositionFollowupController;
 use App\Http\Controllers\IncomingLetterController;
+use App\Http\Controllers\LetterNumberReservationController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OutgoingLetterController;
@@ -48,6 +49,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('incoming-letters/{incomingLetter}', [IncomingLetterController::class, 'destroy'])->middleware('permission:delete incoming letters')->name('incoming-letters.destroy');
 
     Route::get('outgoing-letters', [OutgoingLetterController::class, 'index'])->middleware('permission:view outgoing letters')->name('outgoing-letters.index');
+    Route::get('letter-number-reservations', [LetterNumberReservationController::class, 'index'])->middleware('permission:manage outgoing letters')->name('letter-number-reservations.index');
+    Route::post('letter-number-reservations', [LetterNumberReservationController::class, 'store'])->middleware('permission:manage outgoing letters')->name('letter-number-reservations.store');
+    Route::patch('letter-number-reservations/{letterNumberReservation}/void', [LetterNumberReservationController::class, 'void'])->middleware('permission:manage outgoing letters')->name('letter-number-reservations.void');
     Route::get('reports/outgoing-letters.csv', [ReportExportController::class, 'outgoing'])->middleware('permission:export reports')->name('reports.outgoing-letters.csv');
     Route::get('outgoing-letters/approvals', [OutgoingLetterController::class, 'approvals'])->middleware('permission:view outgoing letters')->name('outgoing-letters.approvals');
     Route::get('outgoing-letters/monitor', [OutgoingLetterController::class, 'monitor'])->middleware('permission:view outgoing letters')->name('outgoing-letters.monitor');

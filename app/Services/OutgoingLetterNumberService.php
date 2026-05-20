@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\LetterCategory;
+use App\Models\LetterNumberReservation;
 use App\Models\OutgoingLetter;
 use Carbon\CarbonInterface;
 
@@ -24,18 +25,27 @@ class OutgoingLetterNumberService
 
     private function nextSequence(CarbonInterface $date, ?OutgoingLetter $letter = null): int
     {
-        $query = OutgoingLetter::query()
+        $outgoingQuery = OutgoingLetter::query()
             ->whereYear('tanggal_surat', $date->year);
 
         if ($letter) {
-            $query->whereKeyNot($letter->id);
+            $outgoingQuery->whereKeyNot($letter->id);
         }
 
-        return $query
+        $outgoingMax = $outgoingQuery
             ->get(['id', 'nomor_surat_keluar'])
             ->map(fn (OutgoingLetter $item) => $this->extractSequence($item->nomor_surat_keluar))
             ->filter()
-            ->max() + 1;
+            ->max() ?? 0;
+
+        $reservationMax = LetterNumberReservation::query()
+            ->whereYear('tanggal_surat', $date->year)
+            ->get(['id', 'nomor_surat'])
+            ->map(fn (LetterNumberReservation $item) => $this->extractSequence($item->nomor_surat))
+            ->filter()
+            ->max() ?? 0;
+
+        return max($outgoingMax, $reservationMax) + 1;
     }
 
     private function resolveExistingSequence(OutgoingLetter $letter): ?int

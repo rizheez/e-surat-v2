@@ -6,6 +6,7 @@ use App\Enums\OutgoingLetterStatus;
 use App\Http\Requests\OutgoingLetterRequest;
 use App\Models\ActivityLog;
 use App\Models\LetterCategory;
+use App\Models\LetterNumberReservation;
 use App\Models\LetterTemplate;
 use App\Models\OutgoingLetter;
 use App\Models\User;
@@ -68,6 +69,7 @@ class OutgoingLetterController extends Controller
         return Inertia::render('OutgoingLetters/Create', [
             'categories' => LetterCategory::orderBy('kode')->get(),
             'letterTemplates' => LetterTemplate::with('category')->orderBy('nama')->get(),
+            'numberReservations' => $this->availableNumberReservations(),
             'signatories' => $this->signatories(),
             'statuses' => array_map(fn ($status) => ['value' => $status->value, 'label' => $status->label()], OutgoingLetterStatus::cases()),
             'initialNumber' => null,
@@ -189,6 +191,7 @@ class OutgoingLetterController extends Controller
             'letter' => $this->presentLetter($outgoingLetter),
             'categories' => LetterCategory::orderBy('kode')->get(),
             'letterTemplates' => LetterTemplate::with('category')->orderBy('nama')->get(),
+            'numberReservations' => $this->availableNumberReservations(),
             'signatories' => $this->signatories(),
             'statuses' => array_map(fn ($status) => ['value' => $status->value, 'label' => $status->label()], OutgoingLetterStatus::cases()),
         ]);
@@ -212,10 +215,15 @@ class OutgoingLetterController extends Controller
 
         $data = $request->validated();
         unset($data['file_surat']);
+        $reservation = isset($data['letter_number_reservation_id'])
+            ? LetterNumberReservation::query()->where('status', 'reserved')->findOrFail($data['letter_number_reservation_id'])
+            : null;
+        unset($data['letter_number_reservation_id']);
         $data['isi_surat'] = clean($data['isi_surat'] ?? '');
 
         $category = LetterCategory::findOrFail($data['kategori_surat_id']);
-        $data['nomor_surat_keluar'] = $this->numberService->generate($category, now()->parse($data['tanggal_surat']));
+        $data['nomor_surat_keluar'] = $reservation?->nomor_surat
+            ?? $this->numberService->generate($category, now()->parse($data['tanggal_surat']));
         $data['created_by'] = $request->user()->id;
         $data['status'] = $data['status'] ?? OutgoingLetterStatus::Draft->value;
         if (in_array($data['status'], [OutgoingLetterStatus::MenungguPersetujuan->value, OutgoingLetterStatus::Disetujui->value], true)) {
@@ -229,6 +237,13 @@ class OutgoingLetterController extends Controller
         }
 
         $letter = OutgoingLetter::create($data);
+        if ($reservation) {
+            $reservation->update([
+                'status' => 'used',
+                'used_by_outgoing_letter_id' => $letter->id,
+                'used_at' => now(),
+            ]);
+        }
         $this->logActivity('created', $letter, $request->user(), $request->user()->name.' membuat draft surat keluar.');
 
         return redirect()->route('outgoing-letters.index')->with('success', 'Surat keluar berhasil ditambahkan.');
@@ -239,7 +254,7 @@ class OutgoingLetterController extends Controller
         $this->authorize('update', $outgoingLetter);
 
         $data = $request->validated();
-        unset($data['file_surat']);
+        unset($data['file_surat'], $data['letter_number_reservation_id']);
         $data['isi_surat'] = clean($data['isi_surat'] ?? '');
 
         $category = LetterCategory::findOrFail($data['kategori_surat_id']);
@@ -481,6 +496,17 @@ class OutgoingLetterController extends Controller
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
+    }
+
+    private function availableNumberReservations()
+    {
+        return LetterNumberReservation::query()
+            ->with('category')
+            ->where('status', 'reserved')
+            ->latest('tanggal_surat')
+            ->get()
+            ->map(fn (LetterNumberReservation $reservation) => LetterNumberReservationController::presentReservation($reservation))
+            ->values();
     }
 
     private function syncSignatoryData(array &$data): void

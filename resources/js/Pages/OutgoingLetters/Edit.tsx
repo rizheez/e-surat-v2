@@ -12,7 +12,7 @@ import {
     DEFAULT_SALAM_PEMBUKA,
     DEFAULT_TEMBUSAN_TEXT,
 } from '@/Pages/OutgoingLetters/Partials/letterContent';
-import { LetterCategory, LetterTemplate, OutgoingLetter, User } from '@/types';
+import { LetterCategory, LetterNumberReservation, LetterTemplate, OutgoingLetter, User } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, ExternalLink, FileText, Save, Upload } from 'lucide-react';
 import { FormEvent, useEffect, useMemo } from 'react';
@@ -21,12 +21,14 @@ type Props = {
     letter: OutgoingLetter;
     categories: LetterCategory[];
     letterTemplates: LetterTemplate[];
+    numberReservations: LetterNumberReservation[];
     signatories: User[];
 };
 
-export default function Edit({ letter, categories, letterTemplates, signatories }: Props) {
+export default function Edit({ letter, categories, letterTemplates, numberReservations, signatories }: Props) {
     const form = useForm({
         letter_template_id: '',
+        letter_number_reservation_id: '',
         nomor_surat_keluar: letter.nomor_surat_keluar,
         tanggal_surat: letter.tanggal_surat.slice(0, 10),
         tujuan_surat: letter.tujuan_surat,
@@ -180,6 +182,17 @@ export default function Edit({ letter, categories, letterTemplates, signatories 
                             <CardContent className="grid gap-5 pt-5 md:grid-cols-2">
                                 <Field label="Nomor surat keluar" error={form.errors.nomor_surat_keluar}>
                                     <Input value={form.data.nomor_surat_keluar} readOnly className="bg-slate-50" />
+                                </Field>
+
+                                <Field label="Nomor reservasi">
+                                    <Select value={form.data.letter_number_reservation_id} disabled>
+                                        <option value="">Reservasi hanya dipakai saat membuat surat baru</option>
+                                        {numberReservations.map((reservation) => (
+                                            <option key={reservation.id} value={reservation.id}>
+                                                {reservation.nomor_surat} - {reservation.perihal}
+                                            </option>
+                                        ))}
+                                    </Select>
                                 </Field>
 
                                 <Field label="Tanggal surat" error={form.errors.tanggal_surat}>

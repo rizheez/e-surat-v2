@@ -12,7 +12,7 @@ import {
     DEFAULT_SALAM_PEMBUKA,
     DEFAULT_TEMBUSAN_TEXT,
 } from '@/Pages/OutgoingLetters/Partials/letterContent';
-import { LetterCategory, LetterTemplate, User } from '@/types';
+import { LetterCategory, LetterNumberReservation, LetterTemplate, User } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, FileText, Save, Upload } from 'lucide-react';
 import { FormEvent, useEffect, useMemo } from 'react';
@@ -20,12 +20,15 @@ import { FormEvent, useEffect, useMemo } from 'react';
 type Props = {
     categories: LetterCategory[];
     letterTemplates: LetterTemplate[];
+    numberReservations: LetterNumberReservation[];
     signatories: User[];
 };
 
-export default function Create({ categories, letterTemplates, signatories }: Props) {
+export default function Create({ categories, letterTemplates, numberReservations, signatories }: Props) {
+    const reservationFromQuery = new URLSearchParams(window.location.search).get('reservation') ?? '';
     const form = useForm({
         letter_template_id: '',
+        letter_number_reservation_id: reservationFromQuery,
         nomor_surat_keluar: '',
         tanggal_surat: new Date().toISOString().slice(0, 10),
         tujuan_surat: '',
@@ -51,6 +54,8 @@ export default function Create({ categories, letterTemplates, signatories }: Pro
         categories.find((category) => String(category.id) === form.data.kategori_surat_id) ?? null;
     const selectedTemplate =
         letterTemplates.find((template) => String(template.id) === form.data.letter_template_id) ?? null;
+    const selectedReservation =
+        numberReservations.find((reservation) => String(reservation.id) === form.data.letter_number_reservation_id) ?? null;
     const selectedSignatory =
         signatories.find((user) => String(user.id) === form.data.signatory_user_id) ?? null;
     const templatesForCategory = useMemo(
@@ -95,6 +100,22 @@ export default function Create({ categories, letterTemplates, signatories }: Pro
             penandatangan_jabatan: selectedSignatory?.position?.nama ?? '',
         }));
     }, [selectedSignatory]);
+
+    useEffect(() => {
+        if (!selectedReservation) {
+            return;
+        }
+
+        form.setData((data) => ({
+            ...data,
+            nomor_surat_keluar: selectedReservation.nomor_surat,
+            tanggal_surat: selectedReservation.tanggal_surat.slice(0, 10),
+            kategori_surat_id: String(selectedReservation.kategori_surat_id),
+            perihal: selectedReservation.perihal,
+            tujuan_surat: selectedReservation.tujuan_surat ?? data.tujuan_surat,
+            content_mode: 'upload',
+        }));
+    }, [selectedReservation]);
 
     useEffect(() => {
         if (!selectedTemplate) {
@@ -178,6 +199,20 @@ export default function Create({ categories, letterTemplates, signatories }: Pro
                             <CardContent className="grid gap-5 pt-5 md:grid-cols-2">
                                 <Field label="Nomor surat keluar" error={form.errors.nomor_surat_keluar}>
                                     <Input value={form.data.nomor_surat_keluar} readOnly className="bg-slate-50" />
+                                </Field>
+
+                                <Field label="Nomor reservasi">
+                                    <Select
+                                        value={form.data.letter_number_reservation_id}
+                                        onChange={(event) => form.setData('letter_number_reservation_id', event.target.value)}
+                                    >
+                                        <option value="">Generate otomatis</option>
+                                        {numberReservations.map((reservation) => (
+                                            <option key={reservation.id} value={reservation.id}>
+                                                {reservation.nomor_surat} - {reservation.perihal}
+                                            </option>
+                                        ))}
+                                    </Select>
                                 </Field>
 
                                 <Field label="Tanggal surat" error={form.errors.tanggal_surat}>

@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\OutgoingLetterStatus;
 use App\Models\LetterCategory;
+use App\Models\LetterNumberReservation;
 use App\Models\OutgoingLetter;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
@@ -32,6 +33,7 @@ class OutgoingLetterRequest extends FormRequest
             'perihal' => ['required', 'string', 'max:255'],
             'ringkasan' => ['nullable', 'string'],
             'kategori_surat_id' => ['required', Rule::exists(LetterCategory::class, 'id')],
+            'letter_number_reservation_id' => ['nullable', Rule::exists(LetterNumberReservation::class, 'id')->where(fn ($query) => $query->where('status', 'reserved'))],
             'signatory_user_id' => ['nullable', Rule::exists(User::class, 'id')->where(fn ($query) => $query->where('is_active', true))],
             'content_mode' => ['required', Rule::in(['upload', 'generate'])],
             'lampiran_text' => ['nullable', 'string', 'max:150'],

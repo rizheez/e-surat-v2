@@ -13,6 +13,7 @@ import {
     FileInput,
     FileOutput,
     GraduationCap,
+    Hash,
     LayoutDashboard,
     PanelTopOpen,
     Radar,
@@ -56,6 +57,13 @@ const navigationSections = [
         title: 'Penyusunan',
         items: [
             { name: 'Penyusunan Surat', href: 'outgoing-letters.index', active: 'outgoing-letters.*', icon: FileOutput },
+            {
+                name: 'Penomoran Surat',
+                href: 'letter-number-reservations.index',
+                active: 'letter-number-reservations.*',
+                icon: Hash,
+                permission: 'manage outgoing letters',
+            },
             {
                 name: 'Inbox Persetujuan',
                 href: 'outgoing-letters.approvals',
