@@ -44,6 +44,7 @@ export default function Index({ reservations, filters, categories, statuses }: P
     const form = useForm({
         tanggal_surat: new Date().toISOString().slice(0, 10),
         kategori_surat_id: '',
+        quantity: '1',
         jenis_dokumen: '',
         perihal: '',
         tujuan_surat: '',
@@ -54,13 +55,18 @@ export default function Index({ reservations, filters, categories, statuses }: P
     });
     const exportUrl = route('reports.letter-number-reservations.xlsx', filters);
     const templateUrl = route('import-templates.letter-number-reservations.xlsx');
+    const quantity = Number(form.data.quantity || '1');
 
     function submit() {
-        form.post(route('letter-number-reservations.store'), {
+        const routeName = quantity > 1 ? 'letter-number-reservations.batch-store' : 'letter-number-reservations.store';
+
+        form.post(route(routeName), {
             preserveScroll: true,
-            onSuccess: () => form.reset('jenis_dokumen', 'perihal', 'tujuan_surat', 'catatan'),
+            onSuccess: () => form.reset('quantity', 'jenis_dokumen', 'perihal', 'tujuan_surat', 'catatan'),
         });
     }
+
+    const submitLabel = quantity > 1 ? `Generate ${quantity} Nomor` : 'Generate Nomor';
 
     function setFilter(name: string, value: string) {
         router.get(route('letter-number-reservations.index'), { ...filters, [name]: value }, { preserveState: true, preserveScroll: true, replace: true });
@@ -123,30 +129,12 @@ export default function Index({ reservations, filters, categories, statuses }: P
                 <div className="space-y-6">
                     <Card>
                         <CardHeader className="border-b border-slate-200">
-                            <CardTitle>Import Excel</CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-5">
-                            <form onSubmit={submitImport} className="grid gap-4">
-                                <Field label="File Excel" error={importForm.errors.file}>
-                                    <Input
-                                        type="file"
-                                        accept=".xlsx,.xls"
-                                        onChange={(event) => importForm.setData('file', event.target.files?.[0] ?? null)}
-                                    />
-                                </Field>
-                                <Button type="submit" disabled={importForm.processing || !importForm.data.file}>
-                                    <Download className="h-4 w-4" />
-                                    Import Excel
-                                </Button>
-                            </form>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader className="border-b border-slate-200">
                             <CardTitle>Generate Nomor</CardTitle>
                         </CardHeader>
                         <CardContent className="grid gap-4 pt-5">
+                            <p className="text-sm text-slate-500">
+                                Buat 1 sampai 100 nomor surat berurutan sekaligus. Semua hasil akan disimpan sebagai reservasi siap pakai.
+                            </p>
                         <Field label="Tanggal surat" error={form.errors.tanggal_surat}>
                             <Input type="date" value={form.data.tanggal_surat} onChange={(event) => form.setData('tanggal_surat', event.target.value)} />
                         </Field>
@@ -160,6 +148,15 @@ export default function Index({ reservations, filters, categories, statuses }: P
                                 ))}
                             </Select>
                         </Field>
+                        <Field label="Jumlah nomor" error={form.errors.quantity}>
+                            <Input
+                                type="number"
+                                min={1}
+                                max={100}
+                                value={form.data.quantity}
+                                onChange={(event) => form.setData('quantity', event.target.value)}
+                            />
+                        </Field>
                         <Field label="Jenis dokumen" error={form.errors.jenis_dokumen}>
                             <Input value={form.data.jenis_dokumen} onChange={(event) => form.setData('jenis_dokumen', event.target.value)} placeholder="Surat tugas, pengumuman, undangan" />
                         </Field>
@@ -172,10 +169,37 @@ export default function Index({ reservations, filters, categories, statuses }: P
                         <Field label="Catatan" error={form.errors.catatan}>
                             <Textarea value={form.data.catatan} onChange={(event) => form.setData('catatan', event.target.value)} rows={3} />
                         </Field>
+                        <p className="text-xs text-slate-500">
+                            Gunakan jumlah lebih dari 1 untuk generate batch. Semua nomor akan dibuat berurutan dan disimpan sebagai reservasi.
+                        </p>
                         <Button type="button" onClick={submit} disabled={form.processing}>
                             <Plus className="h-4 w-4" />
-                            Generate Nomor
+                            {submitLabel}
                         </Button>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="border-b border-slate-200">
+                            <CardTitle>Import Nomor Manual</CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-5">
+                            <form onSubmit={submitImport} className="grid gap-4">
+                                <p className="text-sm text-slate-500">
+                                    Pakai import Excel jika nomor surat sudah ditentukan dari luar sistem atau untuk pencatatan historis.
+                                </p>
+                                <Field label="File Excel" error={importForm.errors.file}>
+                                    <Input
+                                        type="file"
+                                        accept=".xlsx,.xls"
+                                        onChange={(event) => importForm.setData('file', event.target.files?.[0] ?? null)}
+                                    />
+                                </Field>
+                                <Button type="submit" disabled={importForm.processing || !importForm.data.file}>
+                                    <Download className="h-4 w-4" />
+                                    Import Excel
+                                </Button>
+                            </form>
                         </CardContent>
                     </Card>
                 </div>

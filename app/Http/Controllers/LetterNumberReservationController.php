@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreBatchLetterNumberReservationRequest;
 use App\Http\Requests\StoreLetterNumberReservationRequest;
 use App\Models\LetterCategory;
 use App\Models\LetterNumberReservation;
 use App\Services\OutgoingLetterNumberService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -57,16 +60,54 @@ class LetterNumberReservationController extends Controller
     {
         $data = $request->validated();
         $category = LetterCategory::query()->findOrFail($data['kategori_surat_id']);
-        $date = now()->parse($data['tanggal_surat']);
+        $date = Carbon::parse($data['tanggal_surat']);
 
-        LetterNumberReservation::create([
-            ...$data,
-            'nomor_surat' => $this->numberService->generate($category, $date),
-            'created_by' => $request->user()->id,
-            'status' => 'reserved',
-        ]);
+        DB::transaction(function () use ($data, $category, $date, $request) {
+            LetterNumberReservation::create([
+                ...$data,
+                'nomor_surat' => $this->numberService->generate($category, $date),
+                'created_by' => $request->user()->id,
+                'status' => 'reserved',
+            ]);
+        });
 
         return back()->with('success', 'Nomor surat berhasil digenerate dan direservasi.');
+    }
+
+    public function storeBatch(StoreBatchLetterNumberReservationRequest $request): RedirectResponse
+    {
+        $data = $request->validated();
+        $category = LetterCategory::query()->findOrFail($data['kategori_surat_id']);
+        $date = Carbon::parse($data['tanggal_surat']);
+        $numbers = DB::transaction(function () use ($category, $date, $data, $request) {
+            $numbers = $this->numberService->generateBatch($category, $date, $data['quantity']);
+
+            foreach ($numbers as $number) {
+                LetterNumberReservation::create([
+                    'nomor_surat' => $number,
+                    'tanggal_surat' => $date->toDateString(),
+                    'kategori_surat_id' => $category->id,
+                    'jenis_dokumen' => ($data['jenis_dokumen'] ?? null) ?: null,
+                    'perihal' => $data['perihal'],
+                    'tujuan_surat' => ($data['tujuan_surat'] ?? null) ?: null,
+                    'catatan' => ($data['catatan'] ?? null) ?: null,
+                    'created_by' => $request->user()->id,
+                    'status' => 'reserved',
+                ]);
+            }
+
+            return $numbers;
+        });
+
+        $firstNumber = $numbers[0];
+        $lastNumber = $numbers[count($numbers) - 1];
+
+        return back()->with('success', sprintf(
+            '%d nomor surat berhasil digenerate dan direservasi (%s s.d. %s).',
+            $data['quantity'],
+            $firstNumber,
+            $lastNumber,
+        ));
     }
 
     public function void(Request $request, LetterNumberReservation $letterNumberReservation): RedirectResponse

@@ -14,6 +14,21 @@ class OutgoingLetterNumberService
         $sequence = $letter ? $this->resolveExistingSequence($letter) : null;
         $sequence ??= $this->nextSequence($date, $letter);
 
+        return $this->formatNumber($category, $sequence, $date);
+    }
+
+    public function generateBatch(LetterCategory $category, CarbonInterface $date, int $quantity): array
+    {
+        $startSequence = $this->nextSequence($date);
+
+        return array_map(
+            fn (int $sequence) => $this->formatNumber($category, $sequence, $date),
+            range($startSequence, $startSequence + $quantity - 1),
+        );
+    }
+
+    private function formatNumber(LetterCategory $category, int $sequence, CarbonInterface $date): string
+    {
         return sprintf(
             '%s/%d/UNU-KT/%02d/%d',
             $category->kode,

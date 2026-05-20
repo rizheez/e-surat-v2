@@ -89,6 +89,75 @@ class LetterNumberReservationTest extends TestCase
         $this->assertDatabaseHas('letter_number_reservations', ['nomor_surat' => 'UND/2/UNU-KT/05/2026']);
     }
 
+    public function test_manager_can_batch_generate_reserved_numbers(): void
+    {
+        $manager = $this->makeUser('admin-persuratan');
+        $category = LetterCategory::query()->where('kode', 'SK')->firstOrFail();
+
+        $this->actingAs($manager)->post(route('letter-number-reservations.batch-store'), [
+            'tanggal_surat' => '2026-05-21',
+            'kategori_surat_id' => $category->id,
+            'quantity' => 3,
+            'jenis_dokumen' => 'Transkrip',
+            'perihal' => 'Generate batch transkrip',
+            'tujuan_surat' => 'Mahasiswa TI',
+            'catatan' => 'Kebutuhan cetak massal.',
+        ])->assertSessionHas('success');
+
+        $this->assertDatabaseHas('letter_number_reservations', [
+            'nomor_surat' => 'SK/1/UNU-KT/05/2026',
+            'status' => 'reserved',
+            'created_by' => $manager->id,
+        ]);
+        $this->assertDatabaseHas('letter_number_reservations', [
+            'nomor_surat' => 'SK/2/UNU-KT/05/2026',
+            'status' => 'reserved',
+            'created_by' => $manager->id,
+        ]);
+        $this->assertDatabaseHas('letter_number_reservations', [
+            'nomor_surat' => 'SK/3/UNU-KT/05/2026',
+            'status' => 'reserved',
+            'created_by' => $manager->id,
+        ]);
+    }
+
+    public function test_batch_generated_numbers_advance_future_sequence(): void
+    {
+        $manager = $this->makeUser('admin-persuratan');
+        $category = LetterCategory::query()->where('kode', 'SK')->firstOrFail();
+
+        $this->actingAs($manager)->post(route('letter-number-reservations.batch-store'), [
+            'tanggal_surat' => '2026-05-21',
+            'kategori_surat_id' => $category->id,
+            'quantity' => 3,
+            'perihal' => 'Generate batch transkrip',
+        ]);
+
+        $this->actingAs($manager)->post(route('letter-number-reservations.store'), [
+            'tanggal_surat' => '2026-05-21',
+            'kategori_surat_id' => $category->id,
+            'perihal' => 'Generate lanjutan',
+        ])->assertSessionHas('success');
+
+        $this->assertDatabaseHas('letter_number_reservations', [
+            'nomor_surat' => 'SK/4/UNU-KT/05/2026',
+            'status' => 'reserved',
+        ]);
+    }
+
+    public function test_batch_generation_validates_quantity_limit(): void
+    {
+        $manager = $this->makeUser('admin-persuratan');
+        $category = LetterCategory::query()->where('kode', 'SK')->firstOrFail();
+
+        $this->actingAs($manager)->post(route('letter-number-reservations.batch-store'), [
+            'tanggal_surat' => '2026-05-21',
+            'kategori_surat_id' => $category->id,
+            'quantity' => 0,
+            'perihal' => 'Generate batch invalid',
+        ])->assertSessionHasErrors(['quantity']);
+    }
+
     public function test_reserved_number_can_be_voided_before_use(): void
     {
         $manager = $this->makeUser('admin-persuratan');
