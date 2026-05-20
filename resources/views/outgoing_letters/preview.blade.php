@@ -78,11 +78,14 @@
             margin-top: 20px;
         }
 
-        .paragraph,
-        .body-html p {
+        .paragraph {
             margin: 0 0 10px;
             text-align: justify;
             text-indent: 32px;
+        }
+
+        .body-html p {
+            margin: 0 0 10px;
         }
 
         .body-html ul,
