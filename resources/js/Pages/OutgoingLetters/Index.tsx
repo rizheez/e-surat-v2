@@ -82,7 +82,7 @@ export default function Index({ letters, filters, categories, statuses }: Props)
         router.get(route('outgoing-letters.index'), {}, { preserveScroll: true, replace: true });
     }
 
-    const exportUrl = route('reports.outgoing-letters.csv', filters);
+    const exportUrl = route('reports.outgoing-letters.xlsx', filters);
 
     return (
         <AuthenticatedLayout
@@ -100,7 +100,7 @@ export default function Index({ letters, filters, categories, statuses }: Props)
                             <Button asChild variant="outline">
                                 <a href={exportUrl}>
                                     <Download className="h-4 w-4" />
-                                    Export CSV
+                                    Export Excel
                                 </a>
                             </Button>
                         )}

@@ -19,7 +19,7 @@ type Props = {
 export default function Index({ incomingLetters, outgoingLetters, filters, categories, natures }: Props) {
     const { auth } = usePage<PageProps>().props;
     const canExportReports = auth.permissions.includes('export reports');
-    const exportUrl = route('reports.archives.csv', filters);
+    const exportUrl = route('reports.archives.xlsx', filters);
 
     function setFilter(name: string, value: string) {
         router.get(route('archives.index'), { ...filters, [name]: value }, { preserveState: true, preserveScroll: true, replace: true });
@@ -42,7 +42,7 @@ export default function Index({ incomingLetters, outgoingLetters, filters, categ
                         <Button asChild variant="outline">
                             <a href={exportUrl}>
                                 <Download className="h-4 w-4" />
-                                Export CSV
+                                Export Excel
                             </a>
                         </Button>
                     )}

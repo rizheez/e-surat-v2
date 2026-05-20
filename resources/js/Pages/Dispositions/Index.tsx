@@ -39,7 +39,7 @@ export default function Index({ dispositions, filters, statuses }: Props) {
         router.get(route('dispositions.index'), {}, { preserveScroll: true, replace: true });
     }
 
-    const exportUrl = route('reports.dispositions.csv', filters);
+    const exportUrl = route('reports.dispositions.xlsx', filters);
 
     return (
         <AuthenticatedLayout
@@ -57,7 +57,7 @@ export default function Index({ dispositions, filters, statuses }: Props) {
                             <Button asChild variant="outline">
                                 <a href={exportUrl}>
                                     <Download className="h-4 w-4" />
-                                    Export CSV
+                                    Export Excel
                                 </a>
                             </Button>
                         )}

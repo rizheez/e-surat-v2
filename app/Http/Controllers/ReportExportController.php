@@ -4,16 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Enums\IncomingLetterStatus;
 use App\Enums\OutgoingLetterStatus;
+use App\Exports\ArchivesExport;
+use App\Exports\DispositionsExport;
+use App\Exports\IncomingLettersExport;
+use App\Exports\LetterNumberReservationsExport;
+use App\Exports\OutgoingLettersExport;
 use App\Models\Disposition;
 use App\Models\IncomingLetter;
+use App\Models\LetterNumberReservation;
 use App\Models\OutgoingLetter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\StreamedResponse;
+use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ReportExportController extends Controller
 {
-    public function incoming(Request $request): StreamedResponse
+    public function incoming(Request $request): BinaryFileResponse
     {
         abort_unless($request->user()->can('export reports'), 403);
         $this->authorize('viewAny', IncomingLetter::class);
@@ -37,36 +45,13 @@ class ReportExportController extends Controller
             $query->whereHas('nature', fn (Builder $nature) => $nature->where('level_kerahasiaan', 0));
         }
 
-        return $this->csv('laporan-surat-masuk.csv', [
-            'Nomor Agenda',
-            'Nomor Surat',
-            'Tanggal Surat',
-            'Tanggal Diterima',
-            'Asal Surat',
-            'Perihal',
-            'Sifat',
-            'Status',
-            'Dicatat Oleh',
-        ], function ($handle) use ($query) {
-            $query->latest('tanggal_diterima')->chunk(200, function ($letters) use ($handle) {
-                foreach ($letters as $letter) {
-                    fputcsv($handle, [
-                        $letter->nomor_agenda,
-                        $letter->nomor_surat,
-                        $letter->tanggal_surat?->toDateString(),
-                        $letter->tanggal_diterima?->toDateString(),
-                        $letter->asal_surat,
-                        $letter->perihal,
-                        $letter->nature?->nama,
-                        $letter->status->label(),
-                        $letter->createdBy?->name,
-                    ]);
-                }
-            });
-        });
+        return Excel::download(
+            new IncomingLettersExport($query->latest('tanggal_diterima')->get()),
+            'laporan-surat-masuk.xlsx'
+        );
     }
 
-    public function outgoing(Request $request): StreamedResponse
+    public function outgoing(Request $request): BinaryFileResponse
     {
         abort_unless($request->user()->can('export reports'), 403);
         $this->authorize('viewAny', OutgoingLetter::class);
@@ -82,36 +67,13 @@ class ReportExportController extends Controller
             ->when($request->status, fn (Builder $query, string $status) => $query->where('status', $status))
             ->when($request->kategori_id, fn (Builder $query, string $categoryId) => $query->where('kategori_surat_id', $categoryId));
 
-        return $this->csv('laporan-surat-keluar.csv', [
-            'Nomor Surat',
-            'Tanggal Surat',
-            'Tujuan',
-            'Perihal',
-            'Kategori',
-            'Status',
-            'Penandatangan',
-            'Jabatan Penandatangan',
-            'Dibuat Oleh',
-        ], function ($handle) use ($query) {
-            $query->latest('tanggal_surat')->chunk(200, function ($letters) use ($handle) {
-                foreach ($letters as $letter) {
-                    fputcsv($handle, [
-                        $letter->nomor_surat_keluar,
-                        $letter->tanggal_surat?->toDateString(),
-                        $letter->tujuan_surat,
-                        $letter->perihal,
-                        $letter->category?->nama,
-                        $letter->status->label(),
-                        $letter->penandatangan_nama ?: $letter->signatory?->name,
-                        $letter->penandatangan_jabatan ?: $letter->signatory?->position?->nama,
-                        $letter->createdBy?->name,
-                    ]);
-                }
-            });
-        });
+        return Excel::download(
+            new OutgoingLettersExport($query->latest('tanggal_surat')->get()),
+            'laporan-surat-keluar.xlsx'
+        );
     }
 
-    public function dispositions(Request $request): StreamedResponse
+    public function dispositions(Request $request): BinaryFileResponse
     {
         abort_unless($request->user()->can('export reports'), 403);
         $this->authorize('viewAny', Disposition::class);
@@ -133,36 +95,13 @@ class ReportExportController extends Controller
             })
             ->when($request->status, fn (Builder $query, string $status) => $query->where('status', $status));
 
-        return $this->csv('laporan-disposisi.csv', [
-            'Nomor Agenda',
-            'Perihal Surat',
-            'Pengirim Disposisi',
-            'Penerima',
-            'Instruksi',
-            'Catatan',
-            'Tanggal Disposisi',
-            'Batas Waktu',
-            'Status',
-        ], function ($handle) use ($query) {
-            $query->latest('tanggal_disposisi')->chunk(200, function ($dispositions) use ($handle) {
-                foreach ($dispositions as $disposition) {
-                    fputcsv($handle, [
-                        $disposition->incomingLetter?->nomor_agenda,
-                        $disposition->incomingLetter?->perihal,
-                        $disposition->sender?->name,
-                        $disposition->recipients->map(fn ($item) => $item->recipient?->name)->filter()->join(', '),
-                        $disposition->instruksi,
-                        $disposition->catatan,
-                        $disposition->tanggal_disposisi?->toDateTimeString(),
-                        $disposition->batas_waktu?->toDateString(),
-                        $disposition->status->label(),
-                    ]);
-                }
-            });
-        });
+        return Excel::download(
+            new DispositionsExport($query->latest('tanggal_disposisi')->get()),
+            'laporan-disposisi.xlsx'
+        );
     }
 
-    public function archives(Request $request): StreamedResponse
+    public function archives(Request $request): BinaryFileResponse
     {
         abort_unless($request->user()->can('export reports'), 403);
         abort_unless($request->user()->can('view archives'), 403);
@@ -212,46 +151,58 @@ class ReportExportController extends Controller
         $this->sortArchiveQuery($incomingQuery, $request, 'tanggal_diterima');
         $this->sortArchiveQuery($outgoingQuery, $request, 'tanggal_surat');
 
-        return $this->csv('laporan-arsip.csv', [
-            'Jenis Arsip',
-            'Nomor',
-            'Tanggal Dokumen',
-            'Asal/Tujuan',
-            'Perihal',
-            'Kategori/Sifat',
-            'Status',
-            'Dicatat/Dibuat Oleh',
-        ], function ($handle) use ($incomingQuery, $outgoingQuery) {
-            $incomingQuery->chunk(200, function ($letters) use ($handle) {
-                foreach ($letters as $letter) {
-                    fputcsv($handle, [
-                        'Surat Masuk',
-                        $letter->nomor_agenda,
-                        $letter->tanggal_diterima?->toDateString(),
-                        $letter->asal_surat,
-                        $letter->perihal,
-                        $letter->nature?->nama,
-                        $letter->status->label(),
-                        $letter->createdBy?->name,
-                    ]);
-                }
-            });
+        return Excel::download(
+            new ArchivesExport($this->archiveRows($incomingQuery->get(), $outgoingQuery->get())),
+            'laporan-arsip.xlsx'
+        );
+    }
 
-            $outgoingQuery->chunk(200, function ($letters) use ($handle) {
-                foreach ($letters as $letter) {
-                    fputcsv($handle, [
-                        'Surat Keluar',
-                        $letter->nomor_surat_keluar,
-                        $letter->tanggal_surat?->toDateString(),
-                        $letter->tujuan_surat,
-                        $letter->perihal,
-                        $letter->category?->nama,
-                        $letter->status->label(),
-                        $letter->createdBy?->name,
-                    ]);
-                }
-            });
-        });
+    public function letterNumberReservations(Request $request): BinaryFileResponse
+    {
+        abort_unless($request->user()->can('manage outgoing letters'), 403);
+
+        $query = LetterNumberReservation::query()
+            ->with(['category', 'createdBy', 'usedByOutgoingLetter'])
+            ->when($request->search, function (Builder $query, string $search) {
+                $query->where(function (Builder $query) use ($search) {
+                    $query->where('nomor_surat', 'like', "%{$search}%")
+                        ->orWhere('perihal', 'like', "%{$search}%")
+                        ->orWhere('tujuan_surat', 'like', "%{$search}%")
+                        ->orWhere('jenis_dokumen', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->status, fn (Builder $query, string $status) => $query->where('status', $status))
+            ->when($request->kategori_id, fn (Builder $query, string $categoryId) => $query->where('kategori_surat_id', $categoryId));
+
+        return Excel::download(
+            new LetterNumberReservationsExport($query->latest('tanggal_surat')->latest()->get()),
+            'laporan-penomoran-surat.xlsx'
+        );
+    }
+
+    private function archiveRows(Collection $incomingLetters, Collection $outgoingLetters): Collection
+    {
+        return $incomingLetters->map(fn (IncomingLetter $letter) => [
+            'jenis_arsip' => 'Surat Masuk',
+            'nomor' => $letter->nomor_agenda,
+            'tanggal_dokumen' => $letter->tanggal_diterima?->toDateString(),
+            'asal_tujuan' => $letter->asal_surat,
+            'perihal' => $letter->perihal,
+            'kategori_sifat' => $letter->nature?->nama,
+            'status' => $letter->status->label(),
+            'dibuat_oleh' => $letter->createdBy?->name,
+        ])->values()->concat(
+            $outgoingLetters->map(fn (OutgoingLetter $letter) => [
+                'jenis_arsip' => 'Surat Keluar',
+                'nomor' => $letter->nomor_surat_keluar,
+                'tanggal_dokumen' => $letter->tanggal_surat?->toDateString(),
+                'asal_tujuan' => $letter->tujuan_surat,
+                'perihal' => $letter->perihal,
+                'kategori_sifat' => $letter->category?->nama,
+                'status' => $letter->status->label(),
+                'dibuat_oleh' => $letter->createdBy?->name,
+            ])->values()
+        )->values();
     }
 
     private function sortArchiveQuery(Builder $query, Request $request, string $dateColumn): void
@@ -262,17 +213,5 @@ class ReportExportController extends Controller
             'subject' => $query->orderBy('perihal'),
             default => $query->latest($dateColumn),
         };
-    }
-
-    private function csv(string $filename, array $headers, callable $writeRows): StreamedResponse
-    {
-        return response()->streamDownload(function () use ($headers, $writeRows) {
-            $handle = fopen('php://output', 'w');
-            fputcsv($handle, $headers);
-            $writeRows($handle);
-            fclose($handle);
-        }, $filename, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-        ]);
     }
 }

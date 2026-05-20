@@ -9,12 +9,14 @@ use App\Models\Disposition;
 use App\Models\IncomingLetter;
 use App\Models\LetterCategory;
 use App\Models\LetterNature;
+use App\Models\LetterNumberReservation;
 use App\Models\OutgoingLetter;
 use App\Models\Position;
 use App\Models\Unit;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\TestCase;
 
 class ReportExportTest extends TestCase
@@ -60,15 +62,15 @@ class ReportExportTest extends TestCase
             'created_by' => $admin->id,
         ]);
 
-        $response = $this->actingAs($admin)->get(route('reports.incoming-letters.csv', [
+        $response = $this->actingAs($admin)->get(route('reports.incoming-letters.xlsx', [
             'search' => 'export',
         ]));
 
         $response->assertOk();
         $response->assertHeader('content-disposition');
-        $content = $response->streamedContent();
-        $this->assertStringContainsString('Surat export visible', $content);
-        $this->assertStringContainsString('Surat rahasia export', $content);
+        $rows = $this->exportRows($response);
+        $this->assertContains('Surat export visible', $rows);
+        $this->assertContains('Surat rahasia export', $rows);
     }
 
     public function test_user_without_export_permission_cannot_export_reports(): void
@@ -76,7 +78,7 @@ class ReportExportTest extends TestCase
         $user = User::query()->where('email', 'dosen@esurat.test')->firstOrFail();
 
         $this->actingAs($user)
-            ->get(route('reports.incoming-letters.csv'))
+            ->get(route('reports.incoming-letters.xlsx'))
             ->assertForbidden();
     }
 
@@ -113,12 +115,12 @@ class ReportExportTest extends TestCase
             'created_by' => $user->id,
         ]);
 
-        $response = $this->actingAs($user)->get(route('reports.incoming-letters.csv'));
+        $response = $this->actingAs($user)->get(route('reports.incoming-letters.xlsx'));
 
         $response->assertOk();
-        $content = $response->streamedContent();
-        $this->assertStringContainsString('Surat publik export', $content);
-        $this->assertStringNotContainsString('Surat rahasia tersembunyi', $content);
+        $rows = $this->exportRows($response);
+        $this->assertContains('Surat publik export', $rows);
+        $this->assertNotContains('Surat rahasia tersembunyi', $rows);
     }
 
     public function test_admin_can_export_outgoing_letters_with_active_filters(): void
@@ -154,14 +156,14 @@ class ReportExportTest extends TestCase
             'created_by' => $admin->id,
         ]);
 
-        $response = $this->actingAs($admin)->get(route('reports.outgoing-letters.csv', [
+        $response = $this->actingAs($admin)->get(route('reports.outgoing-letters.xlsx', [
             'search' => 'export',
         ]));
 
         $response->assertOk();
-        $content = $response->streamedContent();
-        $this->assertStringContainsString('Surat keluar export', $content);
-        $this->assertStringNotContainsString('Surat keluar lain', $content);
+        $rows = $this->exportRows($response);
+        $this->assertContains('Surat keluar export', $rows);
+        $this->assertNotContains('Surat keluar lain', $rows);
     }
 
     public function test_admin_can_export_dispositions_with_active_filters(): void
@@ -184,14 +186,14 @@ class ReportExportTest extends TestCase
             'status' => DispositionStatus::Menunggu->value,
         ]);
 
-        $response = $this->actingAs($admin)->get(route('reports.dispositions.csv', [
+        $response = $this->actingAs($admin)->get(route('reports.dispositions.xlsx', [
             'search' => $letter->nomor_agenda,
         ]));
 
         $response->assertOk();
-        $content = $response->streamedContent();
-        $this->assertStringContainsString('Instruksi export disposisi', $content);
-        $this->assertStringContainsString($recipient->name, $content);
+        $rows = $this->exportRows($response);
+        $this->assertContains('Instruksi export disposisi', $rows);
+        $this->assertContains($recipient->name, $rows);
     }
 
     public function test_admin_can_export_archives(): void
@@ -227,15 +229,65 @@ class ReportExportTest extends TestCase
             'created_by' => $admin->id,
         ]);
 
-        $response = $this->actingAs($admin)->get(route('reports.archives.csv', [
+        $response = $this->actingAs($admin)->get(route('reports.archives.xlsx', [
             'year' => '2026',
             'month' => '5',
         ]));
 
         $response->assertOk();
-        $content = $response->streamedContent();
-        $this->assertStringContainsString('Arsip masuk export', $content);
-        $this->assertStringContainsString('Arsip keluar export', $content);
+        $rows = $this->exportRows($response);
+        $this->assertContains('Arsip masuk export', $rows);
+        $this->assertContains('Arsip keluar export', $rows);
+    }
+
+    public function test_manager_can_export_letter_number_reservations(): void
+    {
+        $manager = User::query()->where('email', 'admin@esurat.test')->firstOrFail();
+        $manager->givePermissionTo('manage outgoing letters');
+        $category = LetterCategory::query()->where('kode', 'SK')->firstOrFail();
+
+        LetterNumberReservation::create([
+            'nomor_surat' => 'SK/77/UNU-KT/05/2026',
+            'tanggal_surat' => '2026-05-21',
+            'kategori_surat_id' => $category->id,
+            'jenis_dokumen' => 'Surat Tugas',
+            'perihal' => 'Export penomoran surat',
+            'tujuan_surat' => 'Dosen Fakultas Teknik',
+            'catatan' => 'Data export nomor surat.',
+            'status' => 'reserved',
+            'created_by' => $manager->id,
+        ]);
+
+        $response = $this->actingAs($manager)->get(route('reports.letter-number-reservations.xlsx', [
+            'search' => 'Export penomoran',
+        ]));
+
+        $response->assertOk();
+        $rows = $this->exportRows($response);
+        $this->assertContains('Export penomoran surat', $rows);
+        $this->assertContains('SK/77/UNU-KT/05/2026', $rows);
+    }
+
+    private function exportRows($response): array
+    {
+        $path = tempnam(sys_get_temp_dir(), 'export-test-');
+        file_put_contents($path, $response->streamedContent());
+
+        $spreadsheet = IOFactory::load($path);
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = [];
+
+        foreach ($sheet->toArray(null, true, true, false) as $row) {
+            foreach ($row as $value) {
+                if ($value !== null && $value !== '') {
+                    $rows[] = (string) $value;
+                }
+            }
+        }
+
+        @unlink($path);
+
+        return $rows;
     }
 
     private function makeUser(string $role): User

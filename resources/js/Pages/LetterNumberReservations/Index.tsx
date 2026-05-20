@@ -16,7 +16,7 @@ import {
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { LetterCategory, LetterNumberReservation, Option, Paginator } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { Clipboard, Copy, FileOutput, Plus, RotateCcw, Search, XCircle } from 'lucide-react';
+import { Clipboard, Copy, Download, FileOutput, Plus, RotateCcw, Search, XCircle } from 'lucide-react';
 
 const statusLabels: Record<string, string> = {
     reserved: 'Belum dipakai',
@@ -46,6 +46,7 @@ export default function Index({ reservations, filters, categories, statuses }: P
         tujuan_surat: '',
         catatan: '',
     });
+    const exportUrl = route('reports.letter-number-reservations.xlsx', filters);
 
     function submit() {
         form.post(route('letter-number-reservations.store'), {
@@ -77,12 +78,20 @@ export default function Index({ reservations, filters, categories, statuses }: P
                             Generate nomor untuk dokumen yang dibuat di Word, lalu pakai saat upload surat keluar.
                         </p>
                     </div>
-                    <Button asChild variant="outline">
-                        <Link href={route('outgoing-letters.create')}>
-                            <FileOutput className="h-4 w-4" />
-                            Upload Surat Keluar
-                        </Link>
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                        <Button asChild variant="outline">
+                            <a href={exportUrl}>
+                                <Download className="h-4 w-4" />
+                                Export Excel
+                            </a>
+                        </Button>
+                        <Button asChild variant="outline">
+                            <Link href={route('outgoing-letters.create')}>
+                                <FileOutput className="h-4 w-4" />
+                                Upload Surat Keluar
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
             }
         >
