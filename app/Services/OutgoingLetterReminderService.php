@@ -12,7 +12,7 @@ class OutgoingLetterReminderService
     public const PENDING_APPROVAL = 'pending_approval';
     public const PENDING_REVISION = 'pending_revision';
 
-    public function sendStaleReminders(CarbonInterface $runDate): int
+    public function sendStaleReminders(CarbonInterface $runDate, bool $dryRun = false): int
     {
         $sent = 0;
         $threshold = $runDate->copy()->subDays(2)->endOfDay();
@@ -32,7 +32,7 @@ class OutgoingLetterReminderService
                             ->where('updated_at', '<=', $threshold);
                     });
             })
-            ->chunkById(100, function ($letters) use (&$sent, $reminderDate) {
+            ->chunkById(100, function ($letters) use (&$sent, $reminderDate, $dryRun) {
                 foreach ($letters as $letter) {
                     if ($letter->status === OutgoingLetterStatus::MenungguPersetujuan) {
                         $user = $letter->signatory;
@@ -57,7 +57,10 @@ class OutgoingLetterReminderService
                         continue;
                     }
 
-                    $user->notify(new OutgoingLetterApprovalReminder($letter, $type, $reminderDate));
+                    if (!$dryRun) {
+                        $user->notify(new OutgoingLetterApprovalReminder($letter, $type, $reminderDate));
+                    }
+
                     $sent++;
                 }
             });

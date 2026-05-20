@@ -13,6 +13,7 @@ class DispositionDeadlineReminder extends Notification
     public function __construct(
         private readonly Disposition $disposition,
         private readonly string $reminderType,
+        private readonly string $reminderDate,
     ) {
     }
 
@@ -35,6 +36,7 @@ class DispositionDeadlineReminder extends Notification
             'message' => 'Reminder batas waktu disposisi.',
             'batas_waktu' => $this->disposition->batas_waktu?->toDateString(),
             'reminder_type' => $this->reminderType,
+            'reminder_date' => $this->reminderDate,
             'url' => route('dispositions.show', $this->disposition),
         ];
     }
