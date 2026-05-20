@@ -171,15 +171,46 @@ class ReportExportController extends Controller
             ->visibleTo($request->user())
             ->where('status', IncomingLetterStatus::Diarsipkan->value)
             ->when(!$request->user()->can('view confidential letters'), fn (Builder $query) => $query->whereHas('nature', fn (Builder $nature) => $nature->where('level_kerahasiaan', 0)))
+            ->when($request->search, function (Builder $query, string $search) {
+                $query->where(function (Builder $query) use ($search) {
+                    $query->where('nomor_agenda', 'like', "%{$search}%")
+                        ->orWhere('nomor_surat', 'like', "%{$search}%")
+                        ->orWhere('asal_surat', 'like', "%{$search}%")
+                        ->orWhere('perihal', 'like', "%{$search}%")
+                        ->orWhere('ringkasan', 'like', "%{$search}%");
+                });
+            })
             ->when($request->year, fn (Builder $query, string $year) => $query->whereYear('tanggal_diterima', $year))
             ->when($request->month, fn (Builder $query, string $month) => $query->whereMonth('tanggal_diterima', $month))
+            ->when($request->date_from, fn (Builder $query, string $date) => $query->whereDate('tanggal_diterima', '>=', $date))
+            ->when($request->date_to, fn (Builder $query, string $date) => $query->whereDate('tanggal_diterima', '<=', $date))
             ->when($request->sifat_id, fn (Builder $query, string $natureId) => $query->where('sifat_surat_id', $natureId));
 
         $outgoingQuery = OutgoingLetter::with(['category', 'createdBy'])
             ->where('status', OutgoingLetterStatus::Diarsipkan->value)
+            ->when($request->search, function (Builder $query, string $search) {
+                $query->where(function (Builder $query) use ($search) {
+                    $query->where('nomor_surat_keluar', 'like', "%{$search}%")
+                        ->orWhere('tujuan_surat', 'like', "%{$search}%")
+                        ->orWhere('perihal', 'like', "%{$search}%")
+                        ->orWhere('ringkasan', 'like', "%{$search}%");
+                });
+            })
             ->when($request->year, fn (Builder $query, string $year) => $query->whereYear('tanggal_surat', $year))
             ->when($request->month, fn (Builder $query, string $month) => $query->whereMonth('tanggal_surat', $month))
+            ->when($request->date_from, fn (Builder $query, string $date) => $query->whereDate('tanggal_surat', '>=', $date))
+            ->when($request->date_to, fn (Builder $query, string $date) => $query->whereDate('tanggal_surat', '<=', $date))
             ->when($request->kategori_id, fn (Builder $query, string $categoryId) => $query->where('kategori_surat_id', $categoryId));
+
+        $type = $request->string('type')->toString();
+        if ($type === 'incoming') {
+            $outgoingQuery->whereRaw('1 = 0');
+        } elseif ($type === 'outgoing') {
+            $incomingQuery->whereRaw('1 = 0');
+        }
+
+        $this->sortArchiveQuery($incomingQuery, $request, 'tanggal_diterima');
+        $this->sortArchiveQuery($outgoingQuery, $request, 'tanggal_surat');
 
         return $this->csv('laporan-arsip.csv', [
             'Jenis Arsip',
@@ -191,7 +222,7 @@ class ReportExportController extends Controller
             'Status',
             'Dicatat/Dibuat Oleh',
         ], function ($handle) use ($incomingQuery, $outgoingQuery) {
-            $incomingQuery->latest('tanggal_diterima')->chunk(200, function ($letters) use ($handle) {
+            $incomingQuery->chunk(200, function ($letters) use ($handle) {
                 foreach ($letters as $letter) {
                     fputcsv($handle, [
                         'Surat Masuk',
@@ -206,7 +237,7 @@ class ReportExportController extends Controller
                 }
             });
 
-            $outgoingQuery->latest('tanggal_surat')->chunk(200, function ($letters) use ($handle) {
+            $outgoingQuery->chunk(200, function ($letters) use ($handle) {
                 foreach ($letters as $letter) {
                     fputcsv($handle, [
                         'Surat Keluar',
@@ -221,6 +252,16 @@ class ReportExportController extends Controller
                 }
             });
         });
+    }
+
+    private function sortArchiveQuery(Builder $query, Request $request, string $dateColumn): void
+    {
+        match ($request->string('sort')->toString()) {
+            'oldest' => $query->oldest($dateColumn),
+            'number' => $query->orderBy($dateColumn === 'tanggal_diterima' ? 'nomor_agenda' : 'nomor_surat_keluar'),
+            'subject' => $query->orderBy('perihal'),
+            default => $query->latest($dateColumn),
+        };
     }
 
     private function csv(string $filename, array $headers, callable $writeRows): StreamedResponse

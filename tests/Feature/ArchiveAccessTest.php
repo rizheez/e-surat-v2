@@ -128,6 +128,58 @@ class ArchiveAccessTest extends TestCase
                 ->where('incomingLetters.data.0.perihal', 'Arsip Terkait'));
     }
 
+    public function test_archive_can_filter_by_keyword_type_date_range_and_sort(): void
+    {
+        $viewer = $this->makeUser('super-admin', 'RKT', 'Rektor');
+        $viewer->givePermissionTo('view archives');
+        $viewer->givePermissionTo('view outgoing letters');
+        $nature = LetterNature::query()->where('level_kerahasiaan', 0)->firstOrFail();
+        $category = LetterCategory::query()->firstOrFail();
+
+        $incoming = IncomingLetter::create([
+            'nomor_agenda' => '2026/777',
+            'nomor_surat' => 'IN/777/V/2026',
+            'tanggal_surat' => '2026-05-10',
+            'tanggal_diterima' => '2026-05-11',
+            'asal_surat' => 'Badan Akreditasi Nasional',
+            'perihal' => 'Arsip Akreditasi Prodi',
+            'ringkasan' => 'Dokumen arsip akreditasi untuk pencarian.',
+            'sifat_surat_id' => $nature->id,
+            'status' => IncomingLetterStatus::Diarsipkan->value,
+            'created_by' => $viewer->id,
+        ]);
+
+        OutgoingLetter::create([
+            'nomor_surat_keluar' => 'ND/777/UNU-KT/05/2026',
+            'tanggal_surat' => '2026-05-12',
+            'tujuan_surat' => 'Badan Akreditasi Nasional',
+            'perihal' => 'Balasan Arsip Akreditasi',
+            'ringkasan' => 'Dokumen keluar arsip akreditasi.',
+            'kategori_surat_id' => $category->id,
+            'content_mode' => 'generate',
+            'kepada_text' => 'BAN-PT',
+            'isi_surat' => 'Isi surat akreditasi.',
+            'status' => OutgoingLetterStatus::Diarsipkan->value,
+            'created_by' => $viewer->id,
+        ]);
+
+        $this->actingAs($viewer)
+            ->get(route('archives.index', [
+                'search' => 'Akreditasi',
+                'type' => 'incoming',
+                'date_from' => '2026-05-01',
+                'date_to' => '2026-05-31',
+                'sort' => 'number',
+            ]))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Archives/Index')
+                ->where('filters.search', 'Akreditasi')
+                ->where('filters.type', 'incoming')
+                ->where('incomingLetters.data.0.id', $incoming->id)
+                ->has('outgoingLetters.data', 0));
+    }
+
     private function makeIncomingLetter(User $creator, LetterNature $nature, string $perihal): IncomingLetter
     {
         return IncomingLetter::create([
