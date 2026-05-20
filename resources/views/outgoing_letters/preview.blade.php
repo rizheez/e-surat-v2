@@ -86,6 +86,8 @@
 
         .body-html p {
             margin: 0 0 10px;
+            text-align: justify;
+            text-indent: 32px;
         }
 
         .body-html ul,

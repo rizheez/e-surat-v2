@@ -57,7 +57,7 @@ export default function GeneratedLetterPreview({ data }: { data: PreviewData }) 
                     {data.salam_pembuka && <p className="font-semibold">{data.salam_pembuka}</p>}
 
                     <div
-                        className="prose prose-sm max-w-none prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-table:my-2 prose-table:w-full prose-table:border-collapse prose-td:border prose-td:border-slate-300 prose-td:p-1 prose-th:border prose-th:border-slate-300 prose-th:p-1"
+                        className="prose prose-sm max-w-none text-justify prose-p:my-2 prose-p:indent-8 prose-ul:my-2 prose-ol:my-2 prose-table:my-2 prose-table:w-full prose-table:border-collapse prose-td:border prose-td:border-slate-300 prose-td:p-1 prose-th:border prose-th:border-slate-300 prose-th:p-1"
                         dangerouslySetInnerHTML={{ __html: bodyHtml || '<p>-</p>' }}
                     />
 
