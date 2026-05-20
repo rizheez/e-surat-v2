@@ -9,11 +9,11 @@ use Carbon\CarbonInterface;
 
 class DispositionReminderService
 {
-    public const H1_REMINDER = 'deadline_h1';
+    public const H2_REMINDER = 'deadline_h2';
 
     public function sendDueSoonReminders(CarbonInterface $runDate, bool $dryRun = false): int
     {
-        $targetDate = $runDate->copy()->addDay()->toDateString();
+        $targetDate = $runDate->copy()->addDays(2)->toDateString();
         $reminderDate = $runDate->toDateString();
         $sent = 0;
 
@@ -41,7 +41,7 @@ class DispositionReminderService
                     $alreadySent = $user->notifications()
                         ->where('type', DispositionDeadlineReminder::class)
                         ->where('data->disposition_id', $recipient->disposition_id)
-                        ->where('data->reminder_type', self::H1_REMINDER)
+                        ->where('data->reminder_type', self::H2_REMINDER)
                         ->where('data->reminder_date', $reminderDate)
                         ->exists();
 
@@ -52,7 +52,7 @@ class DispositionReminderService
                     if (!$dryRun) {
                         $user->notify(new DispositionDeadlineReminder(
                             $recipient->disposition,
-                            self::H1_REMINDER,
+                            self::H2_REMINDER,
                             $reminderDate,
                         ));
                     }

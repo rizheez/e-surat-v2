@@ -23,7 +23,7 @@ Artisan::command('dispositions:send-deadline-reminders {--date=} {--dry-run}', f
         : "Reminder deadline disposisi terkirim: {$sent}";
 
     $this->info($message);
-})->purpose('Kirim reminder H-1 untuk disposisi yang mendekati batas waktu')
+})->purpose('Kirim reminder H-2 untuk disposisi yang mendekati batas waktu')
     ->dailyAt('07:00')
     ->withoutOverlapping();
 
