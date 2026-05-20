@@ -19,6 +19,7 @@ export default function RichTextEditor({ value, onChange, placeholder }: Props) 
         <div className="overflow-hidden rounded-md border border-slate-300 bg-white focus-within:border-cyan-600 focus-within:ring-1 focus-within:ring-cyan-600">
             <Editor
                 value={value}
+                licenseKey="gpl"
                 onEditorChange={onChange}
                 init={{
                     height: 360,
