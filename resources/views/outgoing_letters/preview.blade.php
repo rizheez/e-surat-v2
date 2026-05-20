@@ -78,11 +78,30 @@
             margin-top: 20px;
         }
 
-        .paragraph {
+        .paragraph,
+        .body-html p {
             margin: 0 0 10px;
             text-align: justify;
             text-indent: 32px;
-            white-space: pre-line;
+        }
+
+        .body-html ul,
+        .body-html ol {
+            margin: 8px 0 10px 24px;
+            padding: 0;
+        }
+
+        .body-html table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 8px 0 10px;
+        }
+
+        .body-html th,
+        .body-html td {
+            border: 1px solid #cbd5e1;
+            padding: 4px 6px;
+            vertical-align: top;
         }
 
         .attachments ol {
@@ -191,12 +210,7 @@
 
 <body>
     @php
-        $bodyParagraphs = collect(
-            preg_split('/\r\n\s*\r\n|\r\s*\r|\n\s*\n/', $letter->isi_surat ?: ($letter->ringkasan ?: '')),
-        )
-            ->map(fn($item) => trim($item))
-            ->filter()
-            ->values();
+        $bodyHtml = clean($letter->isi_surat ?: ($letter->ringkasan ?: ''));
         $closingParagraphs = collect(preg_split('/\r\n\s*\r\n|\r\s*\r|\n\s*\n/', $letter->penutup_text ?: ''))
             ->map(fn($item) => trim($item))
             ->filter()
@@ -258,12 +272,8 @@
             </div>
         @endif
 
-        <div class="body">
-            @forelse($bodyParagraphs as $paragraph)
-                <p class="paragraph">{{ $paragraph }}</p>
-            @empty
-                <p class="paragraph">-</p>
-            @endforelse
+        <div class="body body-html">
+            {!! $bodyHtml ?: '<p>-</p>' !!}
         </div>
 
         @if ($attachmentItems->isNotEmpty())

@@ -240,14 +240,20 @@ class MasterDataController extends Controller
 
     public function storeLetterTemplate(StoreLetterTemplateRequest $request): RedirectResponse
     {
-        LetterTemplate::create($request->validated());
+        $data = $request->validated();
+        $data['isi_surat'] = clean($data['isi_surat'] ?? '');
+
+        LetterTemplate::create($data);
 
         return back()->with('success', 'Template surat berhasil ditambahkan.');
     }
 
     public function updateLetterTemplate(StoreLetterTemplateRequest $request, LetterTemplate $letterTemplate): RedirectResponse
     {
-        $letterTemplate->update($request->validated());
+        $data = $request->validated();
+        $data['isi_surat'] = clean($data['isi_surat'] ?? '');
+
+        $letterTemplate->update($data);
 
         return back()->with('success', 'Template surat berhasil diperbarui.');
     }

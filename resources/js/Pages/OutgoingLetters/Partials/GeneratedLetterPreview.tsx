@@ -1,4 +1,5 @@
 import { toLineItems, toParagraphs } from '@/Pages/OutgoingLetters/Partials/letterContent';
+import DOMPurify from 'dompurify';
 
 type PreviewData = {
     nomor_surat_keluar: string;
@@ -19,7 +20,10 @@ type PreviewData = {
 };
 
 export default function GeneratedLetterPreview({ data }: { data: PreviewData }) {
-    const bodyParagraphs = toParagraphs(data.isi_surat || data.ringkasan);
+    const bodyHtml = DOMPurify.sanitize(data.isi_surat || data.ringkasan || '', {
+        ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'ol', 'ul', 'li', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
+        ALLOWED_ATTR: ['colspan', 'rowspan'],
+    });
     const closingParagraphs = toParagraphs(data.penutup_text);
     const attachmentItems = toLineItems(data.lampiran_detail);
     const ccItems = toLineItems(data.tembusan_text);
@@ -52,13 +56,10 @@ export default function GeneratedLetterPreview({ data }: { data: PreviewData }) 
 
                     {data.salam_pembuka && <p className="font-semibold">{data.salam_pembuka}</p>}
 
-                    <div className="space-y-2 text-justify">
-                        {(bodyParagraphs.length ? bodyParagraphs : ['-']).map((paragraph, index) => (
-                            <p key={index} className="whitespace-pre-line indent-8">
-                                {paragraph}
-                            </p>
-                        ))}
-                    </div>
+                    <div
+                        className="prose prose-sm max-w-none text-justify prose-p:my-2 prose-p:indent-8 prose-ul:my-2 prose-ol:my-2 prose-table:my-2 prose-table:w-full prose-table:border-collapse prose-td:border prose-td:border-slate-300 prose-td:p-1 prose-th:border prose-th:border-slate-300 prose-th:p-1"
+                        dangerouslySetInnerHTML={{ __html: bodyHtml || '<p>-</p>' }}
+                    />
 
                     {attachmentItems.length > 0 && (
                         <div>

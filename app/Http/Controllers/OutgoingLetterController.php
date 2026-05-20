@@ -212,6 +212,7 @@ class OutgoingLetterController extends Controller
 
         $data = $request->validated();
         unset($data['file_surat']);
+        $data['isi_surat'] = clean($data['isi_surat'] ?? '');
 
         $category = LetterCategory::findOrFail($data['kategori_surat_id']);
         $data['nomor_surat_keluar'] = $this->numberService->generate($category, now()->parse($data['tanggal_surat']));
@@ -239,6 +240,7 @@ class OutgoingLetterController extends Controller
 
         $data = $request->validated();
         unset($data['file_surat']);
+        $data['isi_surat'] = clean($data['isi_surat'] ?? '');
 
         $category = LetterCategory::findOrFail($data['kategori_surat_id']);
         $data['nomor_surat_keluar'] = $this->numberService->generate(

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/Components/ui/card';
 import { Input } from '@/Components/ui/input';
 import { Label } from '@/Components/ui/label';
 import { Select } from '@/Components/ui/select';
+import RichTextEditor from '@/Components/RichTextEditor';
 import { Textarea } from '@/Components/ui/textarea';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import GeneratedLetterPreview from '@/Pages/OutgoingLetters/Partials/GeneratedLetterPreview';
@@ -307,15 +308,11 @@ export default function Create({ categories, letterTemplates, signatories }: Pro
                                         />
                                     </Field>
                                     <Field label="Isi surat" error={form.errors.isi_surat} className="md:col-span-2">
-                                        <Textarea
+                                        <RichTextEditor
                                             value={form.data.isi_surat}
-                                            onChange={(event) => form.setData('isi_surat', event.target.value)}
-                                            rows={10}
+                                            onChange={(value) => form.setData('isi_surat', value)}
                                             placeholder="Tulis isi utama surat"
                                         />
-                                        <p className="mt-2 text-xs text-slate-500">
-                                            Gunakan baris kosong untuk memisahkan paragraf surat.
-                                        </p>
                                     </Field>
                                     <Field
                                         label="Daftar lampiran detail"
