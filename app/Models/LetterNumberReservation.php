@@ -29,6 +29,11 @@ class LetterNumberReservation extends Model
         ];
     }
 
+    public function isConsumed(): bool
+    {
+        return in_array($this->status, ['used', 'used_manual'], true);
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(LetterCategory::class, 'kategori_surat_id');

@@ -16,17 +16,20 @@ import {
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { LetterCategory, LetterNumberReservation, Option, Paginator } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { FormEvent } from 'react';
 import { Clipboard, Copy, Download, FileOutput, Plus, RotateCcw, Search, XCircle } from 'lucide-react';
 
 const statusLabels: Record<string, string> = {
     reserved: 'Belum dipakai',
     used: 'Sudah dipakai',
+    used_manual: 'Dipakai manual',
     void: 'Dibatalkan',
 };
 
 const statusClasses: Record<string, string> = {
     reserved: 'bg-amber-50 text-amber-700 ring-amber-200',
     used: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+    used_manual: 'bg-sky-50 text-sky-700 ring-sky-200',
     void: 'bg-slate-100 text-slate-600 ring-slate-200',
 };
 
@@ -45,6 +48,9 @@ export default function Index({ reservations, filters, categories, statuses }: P
         perihal: '',
         tujuan_surat: '',
         catatan: '',
+    });
+    const importForm = useForm({
+        file: null as File | null,
     });
     const exportUrl = route('reports.letter-number-reservations.xlsx', filters);
     const templateUrl = route('import-templates.letter-number-reservations.xlsx');
@@ -66,6 +72,15 @@ export default function Index({ reservations, filters, categories, statuses }: P
 
     function copyNumber(number: string) {
         navigator.clipboard?.writeText(number);
+    }
+
+    function submitImport(event: FormEvent) {
+        event.preventDefault();
+        importForm.post(route('letter-number-reservations.import'), {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => importForm.reset(),
+        });
     }
 
     return (
@@ -105,11 +120,33 @@ export default function Index({ reservations, filters, categories, statuses }: P
             <Head title="Penomoran Surat" />
 
             <div className="grid gap-6 xl:grid-cols-[380px_1fr]">
-                <Card>
-                    <CardHeader className="border-b border-slate-200">
-                        <CardTitle>Generate Nomor</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid gap-4 pt-5">
+                <div className="space-y-6">
+                    <Card>
+                        <CardHeader className="border-b border-slate-200">
+                            <CardTitle>Import Excel</CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-5">
+                            <form onSubmit={submitImport} className="grid gap-4">
+                                <Field label="File Excel" error={importForm.errors.file}>
+                                    <Input
+                                        type="file"
+                                        accept=".xlsx,.xls"
+                                        onChange={(event) => importForm.setData('file', event.target.files?.[0] ?? null)}
+                                    />
+                                </Field>
+                                <Button type="submit" disabled={importForm.processing || !importForm.data.file}>
+                                    <Download className="h-4 w-4" />
+                                    Import Excel
+                                </Button>
+                            </form>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="border-b border-slate-200">
+                            <CardTitle>Generate Nomor</CardTitle>
+                        </CardHeader>
+                        <CardContent className="grid gap-4 pt-5">
                         <Field label="Tanggal surat" error={form.errors.tanggal_surat}>
                             <Input type="date" value={form.data.tanggal_surat} onChange={(event) => form.setData('tanggal_surat', event.target.value)} />
                         </Field>
@@ -139,8 +176,9 @@ export default function Index({ reservations, filters, categories, statuses }: P
                             <Plus className="h-4 w-4" />
                             Generate Nomor
                         </Button>
-                    </CardContent>
-                </Card>
+                        </CardContent>
+                    </Card>
+                </div>
 
                 <Card>
                     <CardHeader className="border-b border-slate-200 pb-4">

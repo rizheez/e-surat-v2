@@ -47,6 +47,7 @@ class LetterNumberReservationController extends Controller
             'statuses' => [
                 ['value' => 'reserved', 'label' => 'Belum dipakai'],
                 ['value' => 'used', 'label' => 'Sudah dipakai'],
+                ['value' => 'used_manual', 'label' => 'Dipakai manual'],
                 ['value' => 'void', 'label' => 'Dibatalkan'],
             ],
         ]);

@@ -112,7 +112,7 @@ export interface LetterNumberReservation {
     perihal: string;
     tujuan_surat?: string | null;
     catatan?: string | null;
-    status: 'reserved' | 'used' | 'void';
+    status: 'reserved' | 'used' | 'used_manual' | 'void';
     created_by: number;
     used_by_outgoing_letter_id?: number | null;
     used_at?: string | null;
