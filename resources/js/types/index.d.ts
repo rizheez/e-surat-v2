@@ -77,6 +77,7 @@ export interface IncomingLetter {
     preview_url?: string | null;
     status: string;
     nature?: LetterNature;
+    created_at?: string;
     created_by?: number;
     created_by_user?: User;
     created_by_relation?: User;
