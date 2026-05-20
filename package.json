@@ -40,6 +40,6 @@
         "lucide-react": "^1.16.0",
         "recharts": "^3.8.1",
         "tailwind-merge": "^3.6.0",
-        "tinymce": "^8.5.1"
+        "tinymce": "7.9.1"
     }
 }

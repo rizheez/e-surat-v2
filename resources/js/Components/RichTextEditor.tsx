@@ -7,6 +7,8 @@ import 'tinymce/plugins/autolink';
 import 'tinymce/plugins/lists';
 import 'tinymce/plugins/table';
 import 'tinymce/themes/silver';
+import 'tinymce/skins/ui/oxide/skin.min.css';
+import 'tinymce/skins/content/default/content.min.css';
 
 type Props = {
     value: string;
