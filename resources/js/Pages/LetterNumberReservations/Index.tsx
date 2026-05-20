@@ -47,6 +47,7 @@ export default function Index({ reservations, filters, categories, statuses }: P
         catatan: '',
     });
     const exportUrl = route('reports.letter-number-reservations.xlsx', filters);
+    const templateUrl = route('import-templates.letter-number-reservations.xlsx');
 
     function submit() {
         form.post(route('letter-number-reservations.store'), {
@@ -79,6 +80,12 @@ export default function Index({ reservations, filters, categories, statuses }: P
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
+                        <Button asChild variant="outline">
+                            <a href={templateUrl}>
+                                <Download className="h-4 w-4" />
+                                Download Template
+                            </a>
+                        </Button>
                         <Button asChild variant="outline">
                             <a href={exportUrl}>
                                 <Download className="h-4 w-4" />
