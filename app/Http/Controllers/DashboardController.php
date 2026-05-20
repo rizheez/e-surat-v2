@@ -7,16 +7,30 @@ use App\Enums\IncomingLetterStatus;
 use App\Enums\OutgoingLetterStatus;
 use App\Models\Disposition;
 use App\Models\IncomingLetter;
+use App\Models\LetterCategory;
+use App\Models\LetterNature;
 use App\Models\OutgoingLetter;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
+    private const PERIODS = [
+        '30d' => 30,
+        '3m' => 90,
+        '6m' => 180,
+        '12m' => 365,
+    ];
+
     public function __invoke(Request $request): Response
     {
         $user = $request->user();
+        $period = array_key_exists($request->query('period'), self::PERIODS)
+            ? (string) $request->query('period')
+            : '12m';
+        $startDate = now()->subDays(self::PERIODS[$period] - 1)->startOfDay();
 
         $dispositionQuery = Disposition::query()
             ->whereNull('parent_disposition_id')
@@ -38,6 +52,15 @@ class DashboardController extends Controller
         });
 
         return Inertia::render('Dashboard', [
+            'filters' => [
+                'period' => $period,
+                'periodOptions' => [
+                    ['value' => '30d', 'label' => '30 hari'],
+                    ['value' => '3m', 'label' => '3 bulan'],
+                    ['value' => '6m', 'label' => '6 bulan'],
+                    ['value' => '12m', 'label' => '12 bulan'],
+                ],
+            ],
             'stats' => [
                 'incoming_this_month' => IncomingLetter::whereMonth('tanggal_diterima', now()->month)->whereYear('tanggal_diterima', now()->year)->count(),
                 'outgoing_this_month' => OutgoingLetter::whereMonth('tanggal_surat', now()->month)->whereYear('tanggal_surat', now()->year)->count(),
@@ -85,6 +108,17 @@ class DashboardController extends Controller
                 'name' => $status->label(),
                 'value' => Disposition::whereNull('parent_disposition_id')->where('status', $status->value)->count(),
             ]),
+            'outgoingCategoryDistribution' => LetterCategory::query()
+                ->withCount(['outgoingLetters as value' => fn ($query) => $query->whereDate('tanggal_surat', '>=', $startDate->toDateString())])
+                ->orderByDesc('value')
+                ->get()
+                ->map(fn (LetterCategory $category) => ['name' => $category->kode, 'value' => $category->value]),
+            'incomingNatureDistribution' => LetterNature::query()
+                ->withCount(['incomingLetters as value' => fn ($query) => $query->whereDate('tanggal_diterima', '>=', $startDate->toDateString())])
+                ->orderByDesc('value')
+                ->get()
+                ->map(fn (LetterNature $nature) => ['name' => $nature->nama, 'value' => $nature->value]),
+            'dispositionTrend' => $this->dispositionTrend($startDate),
             'latestIncomingLetters' => IncomingLetter::with(['nature'])
                 ->latest('tanggal_diterima')
                 ->limit(5)
@@ -128,6 +162,29 @@ class DashboardController extends Controller
                     ->get(),
             ],
         ]);
+    }
+
+    private function dispositionTrend(CarbonInterface $startDate): array
+    {
+        return collect(range(5, 0))->map(function (int $monthsAgo) use ($startDate) {
+            $date = now()->subMonths($monthsAgo);
+
+            return [
+                'month' => $date->format('M Y'),
+                'selesai' => Disposition::whereNull('parent_disposition_id')
+                    ->where('status', DispositionStatus::Selesai->value)
+                    ->whereYear('updated_at', $date->year)
+                    ->whereMonth('updated_at', $date->month)
+                    ->count(),
+                'overdue' => Disposition::whereNull('parent_disposition_id')
+                    ->where('status', '!=', DispositionStatus::Selesai->value)
+                    ->whereDate('batas_waktu', '>=', $startDate->toDateString())
+                    ->whereYear('batas_waktu', $date->year)
+                    ->whereMonth('batas_waktu', $date->month)
+                    ->whereDate('batas_waktu', '<', now()->toDateString())
+                    ->count(),
+            ];
+        })->values()->all();
     }
 
     private function presentDisposition(Disposition $disposition): array

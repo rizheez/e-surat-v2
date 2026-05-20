@@ -1,13 +1,15 @@
 import StatusBadge from '@/Components/StatusBadge';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Disposition, IncomingLetter, OutgoingLetter } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { PanelTopOpen, Radar, Send, TriangleAlert, type LucideIcon } from 'lucide-react';
 import {
     Bar,
     BarChart,
     CartesianGrid,
     Cell,
+    Line,
+    LineChart,
     Pie,
     PieChart,
     ResponsiveContainer,
@@ -16,10 +18,20 @@ import {
     YAxis,
 } from 'recharts';
 
+type ChartDatum = { name: string; value: number };
+type TrendDatum = { month: string; selesai: number; overdue: number };
+
 type Props = {
+    filters: {
+        period: string;
+        periodOptions: { value: string; label: string }[];
+    };
     stats: Record<string, number>;
     monthlyLetters: { month: string; masuk: number; keluar: number }[];
-    statusDistribution: { name: string; value: number }[];
+    statusDistribution: ChartDatum[];
+    outgoingCategoryDistribution: ChartDatum[];
+    incomingNatureDistribution: ChartDatum[];
+    dispositionTrend: TrendDatum[];
     latestIncomingLetters: IncomingLetter[];
     latestDispositions: Disposition[];
     latestApprovals: OutgoingLetter[];
@@ -55,15 +67,23 @@ const labels: Record<string, string> = {
 const colors = ['#006d78', '#ff7900', '#0ea5b7', '#d99a00', '#be123c'];
 
 export default function Dashboard({
+    filters,
     stats,
     monthlyLetters,
     statusDistribution,
+    outgoingCategoryDistribution,
+    incomingNatureDistribution,
+    dispositionTrend,
     latestIncomingLetters,
     latestDispositions,
     latestApprovals,
     monitoring,
     alerts,
 }: Props) {
+    function updatePeriod(period: string) {
+        router.get(route('dashboard'), { period }, { preserveScroll: true, replace: true });
+    }
+
     return (
         <AuthenticatedLayout
             header={
@@ -77,7 +97,25 @@ export default function Dashboard({
         >
             <Head title="Dashboard" />
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+            <div className="flex flex-col justify-between gap-3 rounded-md border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center">
+                <div>
+                    <h2 className="font-semibold">Statistik Dashboard</h2>
+                    <p className="mt-1 text-sm text-gray-500">Sesuaikan periode untuk melihat tren dan distribusi data.</p>
+                </div>
+                <select
+                    value={filters.period}
+                    onChange={(event) => updatePeriod(event.target.value)}
+                    className="rounded-md border-gray-300 text-sm shadow-sm focus:border-cyan-600 focus:ring-cyan-600"
+                >
+                    {filters.periodOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-6">
                 {Object.entries(labels).map(([key, label]) => (
                     <div key={key} className="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
                         <p className="text-sm text-gray-500">{label}</p>
@@ -117,6 +155,26 @@ export default function Dashboard({
                                 </Pie>
                                 <Tooltip />
                             </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                </section>
+            </div>
+
+            <div className="mt-6 grid gap-4 xl:grid-cols-3">
+                <ChartCard title="Kategori Surat Keluar" data={outgoingCategoryDistribution} emptyText="Belum ada surat keluar pada periode ini." />
+                <ChartCard title="Sifat Surat Masuk" data={incomingNatureDistribution} emptyText="Belum ada surat masuk pada periode ini." />
+                <section className="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+                    <h2 className="font-semibold">Trend Disposisi</h2>
+                    <div className="mt-4 h-64">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={dispositionTrend}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+                                <YAxis allowDecimals={false} />
+                                <Tooltip />
+                                <Line type="monotone" dataKey="selesai" stroke="#059669" strokeWidth={2} name="Selesai" />
+                                <Line type="monotone" dataKey="overdue" stroke="#be123c" strokeWidth={2} name="Overdue" />
+                            </LineChart>
                         </ResponsiveContainer>
                     </div>
                 </section>
@@ -285,6 +343,32 @@ export default function Dashboard({
             </div>
 
         </AuthenticatedLayout>
+    );
+}
+
+function ChartCard({ title, data, emptyText }: { title: string; data: ChartDatum[]; emptyText: string }) {
+    const visibleData = data.filter((item) => item.value > 0);
+
+    return (
+        <section className="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
+            <h2 className="font-semibold">{title}</h2>
+            <div className="mt-4 h-64">
+                {visibleData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <Pie data={visibleData} dataKey="value" nameKey="name" outerRadius={80} label>
+                                {visibleData.map((_, index) => (
+                                    <Cell key={index} fill={colors[index % colors.length]} />
+                                ))}
+                            </Pie>
+                            <Tooltip />
+                        </PieChart>
+                    </ResponsiveContainer>
+                ) : (
+                    <div className="flex h-full items-center justify-center text-center text-sm text-gray-500">{emptyText}</div>
+                )}
+            </div>
+        </section>
     );
 }
 
