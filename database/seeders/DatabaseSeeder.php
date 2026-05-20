@@ -101,9 +101,9 @@ class DatabaseSeeder extends Seeder
             Unit::updateOrCreate(['kode' => $unit['kode']], $unit);
         }
 
-        $rektorat = Unit::where('kode', 'RKT')->first();
-        $ft = Unit::where('kode', 'FT')->first();
-        $bau = Unit::where('kode', 'BAU')->first();
+        $rektorat = Unit::query()->where('kode', 'RKT')->firstOrFail();
+        $ft = Unit::query()->where('kode', 'FT')->firstOrFail();
+        $bau = Unit::query()->where('kode', 'BAU')->firstOrFail();
 
         foreach ([
             ['nama' => 'Rektor', 'level' => 1, 'unit_id' => $rektorat->id],
@@ -165,9 +165,9 @@ class DatabaseSeeder extends Seeder
             $position = $userData['position'];
             unset($userData['role'], $userData['position']);
 
-            $user = User::firstOrCreate(['email' => $userData['email']], [
+            $user = User::query()->firstOrCreate(['email' => $userData['email']], [
                 ...$userData,
-                'position_id' => Position::where('nama', $position)->first()->id,
+                'position_id' => Position::query()->where('nama', $position)->firstOrFail()->id,
                 'password' => Hash::make('password'),
                 'is_active' => true,
             ]);
@@ -175,16 +175,20 @@ class DatabaseSeeder extends Seeder
             $user->syncRoles([$role]);
         }
 
-        IncomingLetter::firstOrCreate(['nomor_agenda' => now()->format('Y').'/001'], [
+        IncomingLetter::query()->firstOrCreate(['nomor_agenda' => 'DEMO-BASE-001'], [
             'nomor_surat' => '001/UND/EXT/V/2026',
             'tanggal_surat' => now()->subDays(2)->toDateString(),
             'tanggal_diterima' => now()->subDay()->toDateString(),
             'asal_surat' => 'Lembaga Layanan Pendidikan Tinggi',
             'perihal' => 'Undangan koordinasi pelaporan akademik',
             'ringkasan' => 'Undangan rapat koordinasi pelaporan akademik semester berjalan.',
-            'sifat_surat_id' => LetterNature::where('kode', 'P')->first()->id,
+            'sifat_surat_id' => LetterNature::query()->where('kode', 'P')->firstOrFail()->id,
             'status' => 'baru',
-            'created_by' => User::where('email', 'admin@esurat.test')->first()->id,
+            'created_by' => User::query()->where('email', 'admin@esurat.test')->firstOrFail()->id,
         ]);
+
+        if (!app()->environment('testing')) {
+            $this->call(DemoDataSeeder::class);
+        }
     }
 }
