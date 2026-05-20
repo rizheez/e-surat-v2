@@ -25,6 +25,8 @@ class DispositionFollowupController extends Controller
 
     public function store(DispositionFollowupRequest $request, Disposition $disposition): RedirectResponse
     {
+        $this->authorize('update', $disposition);
+
         $data = $request->validated();
         $status = DispositionStatus::from($data['status']);
         $filePath = null;

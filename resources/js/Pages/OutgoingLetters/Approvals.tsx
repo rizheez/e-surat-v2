@@ -25,7 +25,7 @@ import {
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Option, OutgoingLetter, PageProps, Paginator } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { CheckCircle2, Eye, RotateCcw, Search, Undo2 } from 'lucide-react';
+import { CheckCircle2, Eye, PanelTopOpen, RotateCcw, Search, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 
 type Props = {
@@ -80,19 +80,25 @@ export default function Approvals({ letters, filters, statuses }: Props) {
             header={
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <p className="text-sm font-medium text-slate-500">Persuratan</p>
-                        <h1 className="mt-1 text-2xl font-semibold tracking-normal">Persetujuan Surat</h1>
+                        <p className="text-sm font-medium text-slate-500">Penyusunan Surat</p>
+                        <h1 className="mt-1 text-2xl font-semibold tracking-normal">Inbox Persetujuan</h1>
                         <p className="mt-1 text-sm text-slate-500">
-                            Kotak kerja penandatangan untuk meninjau, menyetujui, atau meminta revisi surat keluar.
+                            Kotak kerja penandatangan untuk meninjau, menyetujui, atau meminta revisi naskah yang diajukan.
                         </p>
                     </div>
                     <div className="rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm text-cyan-900">
                         Aktor saat ini: <span className="font-semibold">{auth.user.name}</span>
                     </div>
+                    <Button asChild variant="outline">
+                        <Link href={route('outgoing-letters.monitor')}>
+                            <PanelTopOpen className="h-4 w-4" />
+                            Monitor Persetujuan
+                        </Link>
+                    </Button>
                 </div>
             }
         >
-            <Head title="Persetujuan Surat" />
+            <Head title="Inbox Persetujuan" />
 
             <Card>
                 <CardHeader className="border-b border-slate-200 pb-4">

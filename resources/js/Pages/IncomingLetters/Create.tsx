@@ -5,17 +5,16 @@ import { Label } from '@/Components/ui/label';
 import { Select } from '@/Components/ui/select';
 import { Textarea } from '@/Components/ui/textarea';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { LetterCategory, LetterNature } from '@/types';
+import { LetterNature } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Save } from 'lucide-react';
 import { FormEvent } from 'react';
 
 type Props = {
     natures: LetterNature[];
-    categories: LetterCategory[];
 };
 
-export default function Create({ natures, categories }: Props) {
+export default function Create({ natures }: Props) {
     const form = useForm({
         nomor_surat: '',
         tanggal_surat: '',
@@ -24,7 +23,6 @@ export default function Create({ natures, categories }: Props) {
         perihal: '',
         ringkasan: '',
         sifat_surat_id: '',
-        kategori_surat_id: '',
         file_surat: null as File | null,
     });
 
@@ -40,8 +38,8 @@ export default function Create({ natures, categories }: Props) {
             header={
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <p className="text-sm font-medium text-slate-500">Surat Masuk</p>
-                        <h1 className="mt-1 text-2xl font-semibold tracking-normal">Tambah Surat Masuk</h1>
+                        <p className="text-sm font-medium text-slate-500">Penerimaan Surat</p>
+                        <h1 className="mt-1 text-2xl font-semibold tracking-normal">Catat Surat Diterima</h1>
                         <p className="mt-1 text-sm text-slate-500">
                             Isi metadata surat dan unggah lampiran PDF jika tersedia.
                         </p>
@@ -55,12 +53,12 @@ export default function Create({ natures, categories }: Props) {
                 </div>
             }
         >
-            <Head title="Tambah Surat Masuk" />
+            <Head title="Catat Surat Diterima" />
 
             <form onSubmit={submit} className="grid gap-6 xl:grid-cols-[1fr_360px]">
                 <Card>
                     <CardHeader className="border-b border-slate-200">
-                        <CardTitle>Informasi Surat</CardTitle>
+                        <CardTitle>Informasi Penerimaan</CardTitle>
                     </CardHeader>
                     <CardContent className="grid gap-5 pt-5 md:grid-cols-2">
                         <Field label="Nomor surat" error={form.errors.nomor_surat}>
@@ -109,20 +107,6 @@ export default function Create({ natures, categories }: Props) {
                             </Select>
                         </Field>
 
-                        <Field label="Kategori" error={form.errors.kategori_surat_id}>
-                            <Select
-                                value={form.data.kategori_surat_id}
-                                onChange={(event) => form.setData('kategori_surat_id', event.target.value)}
-                            >
-                                <option value="">Pilih kategori</option>
-                                {categories.map((item) => (
-                                    <option key={item.id} value={item.id}>
-                                        {item.nama}
-                                    </option>
-                                ))}
-                            </Select>
-                        </Field>
-
                         <Field label="Perihal" error={form.errors.perihal} className="md:col-span-2">
                             <Input
                                 value={form.data.perihal}
@@ -163,12 +147,12 @@ export default function Create({ natures, categories }: Props) {
 
                     <Card>
                         <CardHeader className="border-b border-slate-200">
-                            <CardTitle>Aksi</CardTitle>
+                            <CardTitle>Simpan Penerimaan</CardTitle>
                         </CardHeader>
                         <CardContent className="flex flex-col gap-2 pt-5">
                             <Button disabled={form.processing} type="submit">
                                 <Save className="h-4 w-4" />
-                                Simpan Surat
+                                Simpan Penerimaan
                             </Button>
                             <Button asChild variant="outline" type="button">
                                 <Link href={route('incoming-letters.index')}>Batal</Link>

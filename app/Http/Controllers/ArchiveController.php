@@ -17,12 +17,12 @@ class ArchiveController extends Controller
 {
     public function __invoke(Request $request): Response
     {
-        $incomingQuery = IncomingLetter::with(['nature', 'category'])
+        $incomingQuery = IncomingLetter::with(['nature'])
+            ->visibleTo($request->user())
             ->where('status', IncomingLetterStatus::Diarsipkan->value)
             ->when(!$request->user()->can('view confidential letters'), fn ($query) => $query->whereHas('nature', fn ($nature) => $nature->where('level_kerahasiaan', 0)))
             ->when($request->year, fn ($query, string $year) => $query->whereYear('tanggal_diterima', $year))
             ->when($request->month, fn ($query, string $month) => $query->whereMonth('tanggal_diterima', $month))
-            ->when($request->kategori_id, fn ($query, string $categoryId) => $query->where('kategori_surat_id', $categoryId))
             ->when($request->sifat_id, fn ($query, string $natureId) => $query->where('sifat_surat_id', $natureId));
 
         $outgoingQuery = OutgoingLetter::with('category')

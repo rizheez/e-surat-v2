@@ -36,9 +36,22 @@ type Props = {
     forwardUsers: User[];
     templates: Template[];
     canForward: boolean;
+    canUpdateStatus: boolean;
+    canAddFollowup: boolean;
+    isForwardLocked: boolean;
 };
 
-export default function Show({ disposition, statuses, activities, forwardUsers, templates, canForward }: Props) {
+export default function Show({
+    disposition,
+    statuses,
+    activities,
+    forwardUsers,
+    templates,
+    canForward,
+    canUpdateStatus,
+    canAddFollowup,
+    isForwardLocked,
+}: Props) {
     const statusForm = useForm({ status: disposition.current_user_recipient?.status ?? disposition.status });
     const [previewFollowup, setPreviewFollowup] = useState<DispositionFollowup | null>(null);
     const followupForm = useForm({
@@ -107,6 +120,7 @@ export default function Show({ disposition, statuses, activities, forwardUsers, 
             header={
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
+                        <p className="text-sm font-medium text-slate-500">Tindak Lanjut</p>
                         <h1 className="text-2xl font-semibold">{disposition.incomingLetter?.perihal}</h1>
                         <p className="mt-1 text-sm text-slate-500">
                             Disposisi dari {disposition.sender?.name} - {disposition.batas_waktu ?? 'tanpa batas waktu'}
@@ -116,7 +130,7 @@ export default function Show({ disposition, statuses, activities, forwardUsers, 
                 </div>
             }
         >
-            <Head title="Detail Disposisi" />
+            <Head title="Detail Tindak Lanjut" />
 
             <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
                 <section className="space-y-6">
@@ -126,7 +140,7 @@ export default function Show({ disposition, statuses, activities, forwardUsers, 
                                 href={route('incoming-letters.show', disposition.incoming_letter_id)}
                                 className="text-sm font-medium text-slate-700 hover:underline"
                             >
-                                Buka detail surat
+                                Buka detail penerimaan
                             </Link>
 
                             <div>
@@ -170,7 +184,7 @@ export default function Show({ disposition, statuses, activities, forwardUsers, 
                             <div>
                                 <div className="flex items-center gap-2">
                                     <GitBranch className="h-4 w-4 text-cyan-800" />
-                                    <h2 className="font-semibold text-slate-950">Rantai Disposisi</h2>
+                                <h2 className="font-semibold text-slate-950">Rantai Tindak Lanjut</h2>
                                 </div>
                                 <div className="mt-4 space-y-3">
                                     <DispositionNode node={disposition} depth={0} />
@@ -226,7 +240,7 @@ export default function Show({ disposition, statuses, activities, forwardUsers, 
 
                     <Card>
                         <CardHeader className="border-b border-slate-200">
-                            <CardTitle>Timeline Aktivitas</CardTitle>
+                            <CardTitle>Riwayat Aktivitas</CardTitle>
                         </CardHeader>
                         <CardContent className="pt-5">
                             <div className="space-y-4">
@@ -269,7 +283,7 @@ export default function Show({ disposition, statuses, activities, forwardUsers, 
                 </section>
 
                 <aside className="space-y-4">
-                    {currentRecipient && (
+                    {currentRecipient && canUpdateStatus && (
                         <form
                             onSubmit={updateStatus}
                             className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
@@ -293,6 +307,16 @@ export default function Show({ disposition, statuses, activities, forwardUsers, 
                                 Jika Anda meneruskan disposisi, status Anda akan tetap diproses sampai semua turunan selesai.
                             </p>
                         </form>
+                    )}
+
+                    {currentRecipient && isForwardLocked && (
+                        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 shadow-sm">
+                            <h2 className="font-semibold">Node Sudah Diteruskan</h2>
+                            <p className="mt-2 leading-6">
+                                Disposisi ini sudah Anda teruskan ke level berikutnya. Setelah diteruskan, node ini
+                                terkunci dan statusnya akan disinkronkan otomatis saat seluruh turunan selesai.
+                            </p>
+                        </div>
                     )}
 
                     {canForward && (
@@ -376,44 +400,46 @@ export default function Show({ disposition, statuses, activities, forwardUsers, 
                         </form>
                     )}
 
-                    <form
-                        onSubmit={submitFollowup}
-                        className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
-                    >
-                        <h2 className="font-semibold text-slate-950">Tambah Tindak Lanjut</h2>
-                        <Textarea
-                            value={followupForm.data.catatan}
-                            onChange={(event) => followupForm.setData('catatan', event.target.value)}
-                            rows={4}
-                            placeholder="Catatan tindak lanjut"
-                            className="mt-3"
-                        />
-                        {followupForm.errors.catatan && (
-                            <p className="mt-1 text-xs text-rose-600">{followupForm.errors.catatan}</p>
-                        )}
-                        <Select
-                            value={followupForm.data.status}
-                            onChange={(event) => followupForm.setData('status', event.target.value)}
-                            className="mt-3"
+                    {canAddFollowup && (
+                        <form
+                            onSubmit={submitFollowup}
+                            className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
                         >
-                            {statuses.map((status) => (
-                                <option key={status.value} value={status.value}>
-                                    {status.label}
-                                </option>
-                            ))}
-                        </Select>
-                        <input
-                            type="file"
-                            accept="application/pdf"
-                            onChange={(event) =>
-                                followupForm.setData('file_tindak_lanjut', event.target.files?.[0] ?? null)
-                            }
-                            className="mt-3 block w-full rounded-md border border-cyan-950/10 px-3 py-2 text-sm"
-                        />
-                        <Button className="mt-3 w-full" type="submit" disabled={followupForm.processing}>
-                            Simpan Tindak Lanjut
-                        </Button>
-                    </form>
+                            <h2 className="font-semibold text-slate-950">Tambah Tindak Lanjut</h2>
+                            <Textarea
+                                value={followupForm.data.catatan}
+                                onChange={(event) => followupForm.setData('catatan', event.target.value)}
+                                rows={4}
+                                placeholder="Catatan tindak lanjut"
+                                className="mt-3"
+                            />
+                            {followupForm.errors.catatan && (
+                                <p className="mt-1 text-xs text-rose-600">{followupForm.errors.catatan}</p>
+                            )}
+                            <Select
+                                value={followupForm.data.status}
+                                onChange={(event) => followupForm.setData('status', event.target.value)}
+                                className="mt-3"
+                            >
+                                {statuses.map((status) => (
+                                    <option key={status.value} value={status.value}>
+                                        {status.label}
+                                    </option>
+                                ))}
+                            </Select>
+                            <input
+                                type="file"
+                                accept="application/pdf"
+                                onChange={(event) =>
+                                    followupForm.setData('file_tindak_lanjut', event.target.files?.[0] ?? null)
+                                }
+                                className="mt-3 block w-full rounded-md border border-cyan-950/10 px-3 py-2 text-sm"
+                            />
+                            <Button className="mt-3 w-full" type="submit" disabled={followupForm.processing}>
+                                Simpan Tindak Lanjut
+                            </Button>
+                        </form>
+                    )}
                 </aside>
             </div>
 

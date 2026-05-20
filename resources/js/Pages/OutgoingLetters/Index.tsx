@@ -25,7 +25,7 @@ import {
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { LetterCategory, Option, OutgoingLetter, PageProps, Paginator } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
-import { CheckCircle2, Download, FileText, Pencil, Plus, RotateCcw, Search, Send, Undo2 } from 'lucide-react';
+import { CheckCircle2, Download, FileText, PanelTopOpen, Pencil, Plus, RotateCcw, Search, Send, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 
 type Props = {
@@ -86,32 +86,40 @@ export default function Index({ letters, filters, categories, statuses }: Props)
             header={
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <p className="text-sm font-medium text-slate-500">Persuratan</p>
-                        <h1 className="mt-1 text-2xl font-semibold tracking-normal">Surat Keluar</h1>
+                        <p className="text-sm font-medium text-slate-500">Penyusunan Surat</p>
+                        <h1 className="mt-1 text-2xl font-semibold tracking-normal">Penyusunan Surat</h1>
                         <p className="mt-1 text-sm text-slate-500">
-                            Kelola draft, pengiriman, persetujuan, dan pengarsipan surat keluar.
+                            Kelola draft, pengiriman, persetujuan, dan pengarsipan naskah keluar.
                         </p>
                     </div>
                     {canManageOutgoingLetters && (
-                        <Button asChild>
-                            <Link href={route('outgoing-letters.create')}>
-                                <Plus className="h-4 w-4" />
-                                Tambah Surat
-                            </Link>
-                        </Button>
+                        <div className="flex flex-wrap gap-2">
+                            <Button asChild variant="outline">
+                                <Link href={route('outgoing-letters.monitor')}>
+                                    <PanelTopOpen className="h-4 w-4" />
+                                    Monitor Persetujuan
+                                </Link>
+                            </Button>
+                            <Button asChild>
+                                <Link href={route('outgoing-letters.create')}>
+                                    <Plus className="h-4 w-4" />
+                                    Susun Draft
+                                </Link>
+                            </Button>
+                        </div>
                     )}
                 </div>
             }
         >
-            <Head title="Surat Keluar" />
+            <Head title="Penyusunan Surat" />
 
             <Card>
                 <CardHeader className="border-b border-slate-200 pb-4">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div>
-                            <CardTitle>Daftar Surat Keluar</CardTitle>
+                            <CardTitle>Daftar Draft dan Naskah Keluar</CardTitle>
                             <p className="mt-1 text-sm text-slate-500">
-                                {letters.total} surat keluar tercatat dalam sistem.
+                                {letters.total} draft atau naskah keluar tercatat dalam sistem.
                             </p>
                         </div>
                         <div className="grid gap-2 sm:grid-cols-2 lg:flex lg:min-w-[760px]">
@@ -275,7 +283,7 @@ export default function Index({ letters, filters, categories, statuses }: Props)
                             {letters.data.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={8} className="h-40 text-center text-slate-500">
-                                        Belum ada surat keluar yang sesuai filter.
+                                        Belum ada draft atau naskah keluar yang sesuai filter.
                                     </TableCell>
                                 </TableRow>
                             )}

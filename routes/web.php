@@ -43,6 +43,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('outgoing-letters', [OutgoingLetterController::class, 'index'])->middleware('permission:view outgoing letters')->name('outgoing-letters.index');
     Route::get('outgoing-letters/approvals', [OutgoingLetterController::class, 'approvals'])->middleware('permission:view outgoing letters')->name('outgoing-letters.approvals');
+    Route::get('outgoing-letters/monitor', [OutgoingLetterController::class, 'monitor'])->middleware('permission:view outgoing letters')->name('outgoing-letters.monitor');
     Route::get('outgoing-letters/number-preview', [OutgoingLetterController::class, 'numberPreview'])->middleware('permission:manage outgoing letters')->name('outgoing-letters.number-preview');
     Route::get('outgoing-letters/create', [OutgoingLetterController::class, 'create'])->middleware('permission:manage outgoing letters')->name('outgoing-letters.create');
     Route::get('outgoing-letters/{outgoingLetter}/edit', [OutgoingLetterController::class, 'edit'])->middleware('permission:manage outgoing letters')->name('outgoing-letters.edit');
@@ -58,6 +59,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('outgoing-letters/{outgoingLetter}', [OutgoingLetterController::class, 'destroy'])->middleware('permission:manage outgoing letters')->name('outgoing-letters.destroy');
 
     Route::get('dispositions', [DispositionController::class, 'index'])->middleware('permission:view disposition')->name('dispositions.index');
+    Route::get('dispositions/monitor', [DispositionController::class, 'monitor'])->middleware('permission:view disposition')->name('dispositions.monitor');
     Route::get('dispositions/create', [DispositionController::class, 'create'])->middleware('permission:create disposition')->name('dispositions.create');
     Route::post('dispositions', [DispositionController::class, 'store'])->middleware('permission:create disposition')->name('dispositions.store');
     Route::get('dispositions/{disposition}', [DispositionController::class, 'show'])->middleware('permission:view disposition')->name('dispositions.show');

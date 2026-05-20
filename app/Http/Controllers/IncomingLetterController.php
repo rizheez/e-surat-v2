@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Enums\IncomingLetterStatus;
 use App\Http\Requests\IncomingLetterRequest;
 use App\Models\IncomingLetter;
-use App\Models\LetterCategory;
 use App\Models\LetterNature;
 use App\Services\AgendaNumberService;
 use App\Services\FileUploadService;
@@ -29,7 +28,8 @@ class IncomingLetterController extends Controller
     {
         $this->authorize('viewAny', IncomingLetter::class);
 
-        $query = IncomingLetter::with(['nature', 'category', 'createdBy'])
+        $query = IncomingLetter::with(['nature', 'createdBy'])
+            ->visibleTo($request->user())
             ->when($request->search, function ($query, string $search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('perihal', 'like', "%{$search}%")
@@ -54,7 +54,6 @@ class IncomingLetterController extends Controller
                 ->through(fn (IncomingLetter $letter) => $this->presentLetter($letter)),
             'filters' => $request->only(['search', 'status', 'sifat_id', 'date_from', 'date_to']),
             'natures' => LetterNature::orderBy('nama')->get(),
-            'categories' => LetterCategory::orderBy('kode')->get(),
             'statuses' => $this->statuses(IncomingLetterStatus::cases()),
         ]);
     }
@@ -65,7 +64,6 @@ class IncomingLetterController extends Controller
 
         return Inertia::render('IncomingLetters/Create', [
             'natures' => LetterNature::orderBy('nama')->get(),
-            'categories' => LetterCategory::orderBy('kode')->get(),
         ]);
     }
 
@@ -73,12 +71,11 @@ class IncomingLetterController extends Controller
     {
         $this->authorize('update', $incomingLetter);
 
-        $incomingLetter->load(['nature', 'category']);
+        $incomingLetter->load(['nature']);
 
         return Inertia::render('IncomingLetters/Edit', [
             'letter' => $this->presentLetter($incomingLetter),
             'natures' => LetterNature::orderBy('nama')->get(),
-            'categories' => LetterCategory::orderBy('kode')->get(),
             'statuses' => $this->statuses(IncomingLetterStatus::cases()),
         ]);
     }
@@ -109,7 +106,7 @@ class IncomingLetterController extends Controller
     {
         $this->authorize('view', $incomingLetter);
 
-        $incomingLetter->load(['nature', 'category', 'createdBy', 'dispositions.sender', 'dispositions.recipients.recipient', 'dispositions.followups.recipient']);
+        $incomingLetter->load(['nature', 'createdBy', 'dispositions.sender', 'dispositions.recipients.recipient', 'dispositions.followups.recipient']);
 
         return Inertia::render('IncomingLetters/Show', [
             'letter' => $this->presentLetter($incomingLetter),

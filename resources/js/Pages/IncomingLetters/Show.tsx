@@ -14,14 +14,15 @@ export default function Show({ letter }: { letter: IncomingLetter }) {
             header={
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
+                        <p className="text-sm font-medium text-slate-500">Penerimaan Surat</p>
                         <h1 className="text-2xl font-semibold">{letter.perihal}</h1>
-                        <p className="mt-1 text-sm text-gray-500">Agenda {letter.nomor_agenda} · {letter.nomor_surat}</p>
+                        <p className="mt-1 text-sm text-gray-500">Agenda {letter.nomor_agenda} - {letter.nomor_surat}</p>
                     </div>
                     <StatusBadge value={letter.status} />
                 </div>
             }
         >
-            <Head title={`Surat ${letter.nomor_agenda}`} />
+            <Head title={`Penerimaan ${letter.nomor_agenda}`} />
 
             <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
                 <section className="rounded-md border border-gray-200 bg-white p-5 shadow-sm">
@@ -30,7 +31,6 @@ export default function Show({ letter }: { letter: IncomingLetter }) {
                         <Field label="Tanggal diterima" value={letter.tanggal_diterima} />
                         <Field label="Tanggal surat" value={letter.tanggal_surat} />
                         <Field label="Sifat" value={letter.nature?.nama ?? '-'} />
-                        <Field label="Kategori" value={letter.category?.nama ?? '-'} />
                         <Field label="Dibuat oleh" value={letter.createdBy?.name ?? '-'} />
                     </dl>
                     <div className="mt-6">
@@ -51,11 +51,11 @@ export default function Show({ letter }: { letter: IncomingLetter }) {
                     )}
                     {canCreateDisposition && (
                         <Link href={route('dispositions.create', { incoming_letter_id: letter.id })} className="block rounded-md bg-gray-900 px-4 py-3 text-center text-sm font-medium text-white hover:bg-gray-800">
-                            Buat Disposisi
+                            Mulai Disposisi
                         </Link>
                     )}
                     <section className="rounded-md border border-gray-200 bg-white p-4 shadow-sm">
-                        <h2 className="font-semibold">Riwayat Disposisi</h2>
+                        <h2 className="font-semibold">Riwayat Tindak Lanjut</h2>
                         <div className="mt-3 space-y-3">
                             {(letter.dispositions ?? []).map((disposition) => (
                                 <Link key={disposition.id} href={route('dispositions.show', disposition.id)} className="block rounded-md border border-gray-200 p-3 hover:bg-gray-50">

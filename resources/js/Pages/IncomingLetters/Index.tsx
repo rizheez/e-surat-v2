@@ -13,7 +13,7 @@ import {
     TableRow,
 } from '@/Components/ui/table';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { IncomingLetter, LetterCategory, LetterNature, Option, PageProps, Paginator } from '@/types';
+import { IncomingLetter, LetterNature, Option, PageProps, Paginator } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Eye, FileText, Pencil, Plus, RotateCcw, Search, Send } from 'lucide-react';
 
@@ -21,7 +21,6 @@ type Props = {
     letters: Paginator<IncomingLetter>;
     filters: Record<string, string>;
     natures: LetterNature[];
-    categories: LetterCategory[];
     statuses: Option[];
 };
 
@@ -48,30 +47,30 @@ export default function Index({ letters, filters, natures, statuses }: Props) {
             header={
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <p className="text-sm font-medium text-slate-500">Persuratan</p>
-                        <h1 className="mt-1 text-2xl font-semibold tracking-normal">Surat Masuk</h1>
+                        <p className="text-sm font-medium text-slate-500">Penerimaan Surat</p>
+                        <h1 className="mt-1 text-2xl font-semibold tracking-normal">Penerimaan Surat</h1>
                         <p className="mt-1 text-sm text-slate-500">
-                            Kelola agenda surat masuk, file PDF, dan disposisi.
+                            Kelola agenda penerimaan, file PDF, dan proses disposisi.
                         </p>
                     </div>
                     {canCreateIncomingLetter && (
                         <Button asChild>
                             <Link href={route('incoming-letters.create')}>
                                 <Plus className="h-4 w-4" />
-                                Tambah Surat
+                                Catat Surat
                             </Link>
                         </Button>
                     )}
                 </div>
             }
         >
-            <Head title="Surat Masuk" />
+            <Head title="Penerimaan Surat" />
 
             <Card>
                 <CardHeader className="border-b border-slate-200 pb-4">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div>
-                            <CardTitle>Daftar Surat Masuk</CardTitle>
+                            <CardTitle>Daftar Surat Diterima</CardTitle>
                             <p className="mt-1 text-sm text-slate-500">
                                 {letters.total} surat tercatat dalam sistem.
                             </p>
@@ -135,7 +134,7 @@ export default function Index({ letters, filters, natures, statuses }: Props) {
                                 <TableHead className="w-[130px]">Agenda</TableHead>
                                 <TableHead>Surat</TableHead>
                                 <TableHead>Asal</TableHead>
-                                <TableHead>Kategori</TableHead>
+                                <TableHead>Sifat</TableHead>
                                 <TableHead>Tanggal Terima</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead className="w-[220px] text-right">Aksi</TableHead>
@@ -152,12 +151,7 @@ export default function Index({ letters, filters, natures, statuses }: Props) {
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-slate-600">{letter.asal_surat}</TableCell>
-                                    <TableCell className="text-slate-600">
-                                        {letter.category?.nama ?? '-'}
-                                        {letter.nature && (
-                                            <span className="ml-1 text-xs text-slate-400">- {letter.nature.nama}</span>
-                                        )}
-                                    </TableCell>
+                                    <TableCell className="text-slate-600">{letter.nature?.nama ?? '-'}</TableCell>
                                     <TableCell className="text-slate-600">{formatDate(letter.tanggal_diterima)}</TableCell>
                                     <TableCell>
                                         <StatusBadge value={letter.status} />
@@ -201,7 +195,7 @@ export default function Index({ letters, filters, natures, statuses }: Props) {
                             {letters.data.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={7} className="h-40 text-center text-slate-500">
-                                        Belum ada surat masuk yang sesuai filter.
+                                        Belum ada penerimaan surat yang sesuai filter.
                                     </TableCell>
                                 </TableRow>
                             )}

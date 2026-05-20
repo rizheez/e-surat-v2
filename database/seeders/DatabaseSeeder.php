@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             'manage users',
             'manage master data',
             'view incoming letters',
+            'view all incoming letters',
             'create incoming letters',
             'update incoming letters',
             'delete incoming letters',
@@ -49,6 +50,7 @@ class DatabaseSeeder extends Seeder
         Role::firstOrCreate(['name' => 'admin-persuratan'])->syncPermissions([
             'view dashboard',
             'view incoming letters',
+            'view all incoming letters',
             'create incoming letters',
             'update incoming letters',
             'delete incoming letters',
@@ -64,6 +66,7 @@ class DatabaseSeeder extends Seeder
             Role::firstOrCreate(['name' => $roleName])->syncPermissions([
                 'view dashboard',
                 'view incoming letters',
+                'view all incoming letters',
                 'view confidential letters',
                 'create disposition',
                 'view disposition',
@@ -178,7 +181,6 @@ class DatabaseSeeder extends Seeder
             'perihal' => 'Undangan koordinasi pelaporan akademik',
             'ringkasan' => 'Undangan rapat koordinasi pelaporan akademik semester berjalan.',
             'sifat_surat_id' => LetterNature::where('kode', 'P')->first()->id,
-            'kategori_surat_id' => LetterCategory::where('kode', 'UND')->first()->id,
             'status' => 'baru',
             'created_by' => User::where('email', 'admin@esurat.test')->first()->id,
         ]);

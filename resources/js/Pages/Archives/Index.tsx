@@ -21,18 +21,19 @@ export default function Index({ incomingLetters, outgoingLetters, filters, categ
         <AuthenticatedLayout
             header={
                 <div>
+                    <p className="text-sm font-medium text-slate-500">Arsip dan Referensi</p>
                     <h1 className="text-2xl font-semibold">Arsip Digital</h1>
-                    <p className="mt-1 text-sm text-gray-500">Akses baca untuk surat masuk dan surat keluar yang sudah diarsipkan.</p>
+                    <p className="mt-1 text-sm text-gray-500">Akses baca untuk penerimaan dan naskah keluar yang sudah diarsipkan.</p>
                 </div>
             }
         >
-            <Head title="Arsip" />
+            <Head title="Arsip Digital" />
 
             <div className="mb-4 grid gap-3 rounded-md border border-gray-200 bg-white p-4 shadow-sm md:grid-cols-4">
                 <input value={filters.year ?? ''} onChange={(e) => setFilter('year', e.target.value)} placeholder="Tahun" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
                 <input value={filters.month ?? ''} onChange={(e) => setFilter('month', e.target.value)} placeholder="Bulan 1-12" className="rounded-md border border-gray-300 px-3 py-2 text-sm" />
                 <select value={filters.kategori_id ?? ''} onChange={(e) => setFilter('kategori_id', e.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-                    <option value="">Semua kategori</option>
+                    <option value="">Semua kategori naskah keluar</option>
                     {categories.map((category) => <option key={category.id} value={category.id}>{category.nama}</option>)}
                 </select>
                 <select value={filters.sifat_id ?? ''} onChange={(e) => setFilter('sifat_id', e.target.value)} className="rounded-md border border-gray-300 px-3 py-2 text-sm">
@@ -42,8 +43,8 @@ export default function Index({ incomingLetters, outgoingLetters, filters, categ
             </div>
 
             <div className="grid gap-6 xl:grid-cols-2">
-                <ArchiveTable title="Surat Masuk Diarsipkan" rows={incomingLetters} detailRoute="incoming-letters.show" />
-                <ArchiveTable title="Surat Keluar Diarsipkan" rows={outgoingLetters} detailRoute="outgoing-letters.show" />
+                <ArchiveTable title="Penerimaan yang Diarsipkan" rows={incomingLetters} detailRoute="incoming-letters.show" />
+                <ArchiveTable title="Naskah Keluar yang Diarsipkan" rows={outgoingLetters} detailRoute="outgoing-letters.show" />
             </div>
         </AuthenticatedLayout>
     );
@@ -76,7 +77,7 @@ function ArchiveTable({
                             <div className="flex items-start justify-between gap-3">
                                 <div>
                                     <p className="font-medium">{title}</p>
-                                    <p className="mt-1 text-sm text-gray-500">{number} · {date}</p>
+                                    <p className="mt-1 text-sm text-gray-500">{number} - {date}</p>
                                 </div>
                                 <StatusBadge value={row.status} />
                             </div>

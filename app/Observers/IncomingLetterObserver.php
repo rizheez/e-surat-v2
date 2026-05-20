@@ -13,13 +13,18 @@ class IncomingLetterObserver
     {
         $this->log('created', $letter, "Surat masuk dibuat: {$letter->nomor_agenda}");
 
-        $letter->loadMissing('createdBy');
+        $letter->loadMissing(['createdBy', 'nature']);
 
-        User::permission('view incoming letters')
+        $recipients = User::permission('view all incoming letters')
             ->where('is_active', true)
             ->when($letter->created_by, fn ($query) => $query->whereKeyNot($letter->created_by))
-            ->get()
-            ->each(fn (User $user) => $user->notify(new IncomingLetterCreated($letter)));
+            ->get();
+
+        if ($letter->nature && $letter->nature->level_kerahasiaan > 0) {
+            $recipients = $recipients->filter(fn (User $user) => $user->can('view confidential letters'));
+        }
+
+        $recipients->each(fn (User $user) => $user->notify(new IncomingLetterCreated($letter)));
     }
 
     public function updated(IncomingLetter $letter): void

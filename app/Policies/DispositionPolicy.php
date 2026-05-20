@@ -26,8 +26,18 @@ class DispositionPolicy
 
     public function update(User $user, Disposition $disposition): bool
     {
-        return $user->can('update disposition status')
-            && ($disposition->sender_id === $user->id || $disposition->recipients()->where('recipient_id', $user->id)->exists());
+        if (!$user->can('update disposition status')) {
+            return false;
+        }
+
+        $recipient = $disposition->recipients()->where('recipient_id', $user->id)->first();
+
+        if ($recipient) {
+            return $recipient->status !== \App\Enums\DispositionStatus::Selesai
+                && !$disposition->hasBeenForwardedBy($user);
+        }
+
+        return $disposition->sender_id === $user->id;
     }
 
     public function forward(User $user, Disposition $disposition): bool
@@ -36,6 +46,7 @@ class DispositionPolicy
 
         return $user->can('create disposition')
             && $recipient !== null
-            && $recipient->status !== \App\Enums\DispositionStatus::Selesai;
+            && $recipient->status !== \App\Enums\DispositionStatus::Selesai
+            && !$disposition->hasBeenForwardedBy($user);
     }
 }

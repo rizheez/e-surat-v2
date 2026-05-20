@@ -19,6 +19,10 @@ class IncomingLetterPolicy
             return false;
         }
 
+        if (!$letter->isVisibleTo($user)) {
+            return false;
+        }
+
         if ($letter->nature && $letter->nature->level_kerahasiaan > 0) {
             return $user->can('view confidential letters');
         }

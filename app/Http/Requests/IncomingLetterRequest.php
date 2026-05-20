@@ -25,7 +25,6 @@ class IncomingLetterRequest extends FormRequest
             'perihal' => ['required', 'string', 'max:255'],
             'ringkasan' => ['nullable', 'string'],
             'sifat_surat_id' => ['required', 'exists:letter_natures,id'],
-            'kategori_surat_id' => ['required', 'exists:letter_categories,id'],
             'status' => ['nullable', new Enum(IncomingLetterStatus::class)],
             'file_surat' => [$fileRule, 'file', 'mimes:pdf', 'max:10240'],
         ];

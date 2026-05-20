@@ -13,14 +13,19 @@ class AgendaNumberService
 
         return DB::transaction(function () use ($year) {
             $latest = IncomingLetter::query()
-                ->where('nomor_agenda', 'like', "{$year}/%")
+                ->where('nomor_agenda', 'like', "SM/%/{$year}")
                 ->lockForUpdate()
                 ->orderByDesc('nomor_agenda')
                 ->value('nomor_agenda');
 
-            $sequence = $latest ? ((int) substr($latest, -3)) + 1 : 1;
+            $sequence = 1;
 
-            return sprintf('%d/%03d', $year, $sequence);
+            if ($latest) {
+                $parts = explode('/', $latest);
+                $sequence = ((int) ($parts[1] ?? 0)) + 1;
+            }
+
+            return sprintf('SM/%03d/%d', $sequence, $year);
         });
     }
 }

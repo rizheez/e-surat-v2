@@ -7,19 +7,19 @@ import { Textarea } from '@/Components/ui/textarea';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { IncomingLetter, User } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Send } from 'lucide-react';
+import { ArrowLeft, FileText, Send } from 'lucide-react';
 import { FormEvent } from 'react';
 
 type Template = { id: number; judul: string; isi_instruksi: string };
 
 type Props = {
-    letters: IncomingLetter[];
+    letter: IncomingLetter;
     users: User[];
     templates: Template[];
     selectedIncomingLetterId?: number | null;
 };
 
-export default function Create({ letters, users, templates, selectedIncomingLetterId }: Props) {
+export default function Create({ letter, users, templates, selectedIncomingLetterId }: Props) {
     const form = useForm({
         incoming_letter_id: selectedIncomingLetterId ? String(selectedIncomingLetterId) : '',
         recipient_ids: [] as number[],
@@ -44,41 +44,46 @@ export default function Create({ letters, users, templates, selectedIncomingLett
             header={
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <p className="text-sm font-medium text-slate-500">Disposisi</p>
-                        <h1 className="mt-1 text-2xl font-semibold tracking-normal">Buat Disposisi</h1>
+                        <p className="text-sm font-medium text-slate-500">Tindak Lanjut</p>
+                        <h1 className="mt-1 text-2xl font-semibold tracking-normal">Mulai Disposisi</h1>
                         <p className="mt-1 text-sm text-slate-500">
-                            Pilih surat, penerima, instruksi, dan batas waktu penyelesaian.
+                            Lengkapi penerima, instruksi, dan batas waktu untuk surat masuk yang dipilih.
                         </p>
                     </div>
                     <Button asChild variant="outline">
-                        <Link href={route('dispositions.index')}>
+                        <Link href={route('incoming-letters.show', letter.id)}>
                             <ArrowLeft className="h-4 w-4" />
-                            Kembali
+                            Kembali ke Penerimaan
                         </Link>
                     </Button>
                 </div>
             }
         >
-            <Head title="Buat Disposisi" />
+            <Head title="Mulai Disposisi" />
 
             <form onSubmit={submit} className="grid gap-6 xl:grid-cols-[1fr_420px]">
                 <Card>
                     <CardHeader className="border-b border-slate-200">
-                        <CardTitle>Instruksi Disposisi</CardTitle>
+                        <CardTitle>Rencana Tindak Lanjut</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-5 pt-5">
                         <Field label="Surat masuk" error={form.errors.incoming_letter_id}>
-                            <Select
-                                value={form.data.incoming_letter_id}
-                                onChange={(event) => form.setData('incoming_letter_id', event.target.value)}
-                            >
-                                <option value="">Pilih surat</option>
-                                {letters.map((letter) => (
-                                    <option key={letter.id} value={letter.id}>
-                                        {letter.nomor_agenda} - {letter.perihal}
-                                    </option>
-                                ))}
-                            </Select>
+                            <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+                                <div className="flex items-start gap-3">
+                                    <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-cyan-50 text-cyan-800">
+                                        <FileText className="h-4 w-4" />
+                                    </span>
+                                    <div className="min-w-0">
+                                        <p className="font-medium text-slate-950">{letter.perihal}</p>
+                                        <p className="mt-1 text-sm text-slate-500">
+                                            {letter.nomor_agenda} - {letter.asal_surat}
+                                        </p>
+                                        {letter.nomor_surat && (
+                                            <p className="mt-1 text-xs text-slate-500">Nomor surat: {letter.nomor_surat}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
                         </Field>
 
                         <Field label="Template instruksi">
@@ -146,7 +151,7 @@ export default function Create({ letters, users, templates, selectedIncomingLett
 
                     <Card>
                         <CardHeader className="border-b border-slate-200">
-                            <CardTitle>Aksi</CardTitle>
+                            <CardTitle>Kirim Disposisi</CardTitle>
                         </CardHeader>
                         <CardContent className="flex flex-col gap-2 pt-5">
                             <Button disabled={form.processing} type="submit">
@@ -154,7 +159,7 @@ export default function Create({ letters, users, templates, selectedIncomingLett
                                 Kirim Disposisi
                             </Button>
                             <Button asChild variant="outline" type="button">
-                                <Link href={route('dispositions.index')}>Batal</Link>
+                                <Link href={route('incoming-letters.show', letter.id)}>Batal</Link>
                             </Button>
                         </CardContent>
                     </Card>

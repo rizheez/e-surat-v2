@@ -113,6 +113,71 @@ class OutgoingLetterController extends Controller
         ]);
     }
 
+    public function monitor(Request $request): Response
+    {
+        $this->authorize('viewAny', OutgoingLetter::class);
+
+        $statuses = [
+            OutgoingLetterStatus::MenungguPersetujuan,
+            OutgoingLetterStatus::PerluRevisi,
+            OutgoingLetterStatus::Disetujui,
+        ];
+
+        $baseQuery = OutgoingLetter::query()
+            ->with(['category', 'createdBy.unit', 'createdBy.position', 'signatory.position', 'signatory.unit'])
+            ->where('content_mode', 'generate')
+            ->when($request->search, function ($query, string $search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('perihal', 'like', "%{$search}%")
+                        ->orWhere('nomor_surat_keluar', 'like', "%{$search}%")
+                        ->orWhere('tujuan_surat', 'like', "%{$search}%");
+                });
+            })
+            ->when(
+                $request->status,
+                fn ($query, string $status) => $query->where('status', $status),
+                fn ($query) => $query->whereIn('status', $statuses),
+            )
+            ->when($request->signatory_id, fn ($query, string $signatoryId) => $query->where('signatory_user_id', $signatoryId))
+            ->when($request->creator_id, fn ($query, string $creatorId) => $query->where('created_by', $creatorId));
+
+        $summaryItems = (clone $baseQuery)->get();
+
+        return Inertia::render('OutgoingLetters/Monitor', [
+            'letters' => $baseQuery
+                ->orderByRaw('coalesce(approval_requested_at, created_at) desc')
+                ->latest('tanggal_surat')
+                ->paginate(10)
+                ->withQueryString()
+                ->through(fn (OutgoingLetter $letter) => $this->presentMonitoringLetter($letter)),
+            'filters' => $request->only(['search', 'status', 'signatory_id', 'creator_id']),
+            'statuses' => collect($statuses)
+                ->map(fn ($status) => ['value' => $status->value, 'label' => $status->label()])
+                ->values(),
+            'summary' => [
+                'total' => $summaryItems->count(),
+                'pending' => $summaryItems->where('status', OutgoingLetterStatus::MenungguPersetujuan)->count(),
+                'revision' => $summaryItems->where('status', OutgoingLetterStatus::PerluRevisi)->count(),
+                'approved' => $summaryItems->where('status', OutgoingLetterStatus::Disetujui)->count(),
+                'stuck' => $summaryItems
+                    ->filter(fn (OutgoingLetter $letter) => $letter->status === OutgoingLetterStatus::MenungguPersetujuan
+                        && $letter->approval_requested_at
+                        && $letter->approval_requested_at->lt(now()->subDays(2)))
+                    ->count(),
+            ],
+            'signatories' => User::query()
+                ->with(['position', 'unit'])
+                ->permission('view outgoing letters')
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(),
+            'creators' => User::query()
+                ->whereIn('id', OutgoingLetter::query()->distinct()->pluck('created_by'))
+                ->orderBy('name')
+                ->get(['id', 'name']),
+        ]);
+    }
+
     public function edit(OutgoingLetter $outgoingLetter): Response
     {
         $this->authorize('update', $outgoingLetter);
@@ -381,6 +446,21 @@ class OutgoingLetterController extends Controller
             : null;
         $data['signatory'] = $letter->signatory?->loadMissing(['position', 'unit'])?->toArray();
         unset($data['file_path']);
+
+        return $data;
+    }
+
+    private function presentMonitoringLetter(OutgoingLetter $letter): array
+    {
+        $data = $this->presentLetter($letter);
+        $approvalAgeDays = $letter->approval_requested_at
+            ? $letter->approval_requested_at->startOfDay()->diffInDays(now()->startOfDay())
+            : null;
+
+        $data['approval_age_days'] = $approvalAgeDays;
+        $data['is_stuck'] = $letter->status === OutgoingLetterStatus::MenungguPersetujuan
+            && $approvalAgeDays !== null
+            && $approvalAgeDays >= 2;
 
         return $data;
     }

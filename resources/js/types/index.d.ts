@@ -72,13 +72,11 @@ export interface IncomingLetter {
     perihal: string;
     ringkasan?: string | null;
     sifat_surat_id: number;
-    kategori_surat_id: number;
     has_file?: boolean;
     file_url?: string | null;
     preview_url?: string | null;
     status: string;
     nature?: LetterNature;
-    category?: LetterCategory;
     created_by?: number;
     created_by_user?: User;
     created_by_relation?: User;
@@ -110,6 +108,8 @@ export interface OutgoingLetter {
     file_url?: string | null;
     preview_url?: string | null;
     pdf_download_url?: string | null;
+    approval_age_days?: number | null;
+    is_stuck?: boolean;
     status: string;
     approval_requested_at?: string | null;
     approved_at?: string | null;
@@ -158,6 +158,25 @@ export interface Disposition {
     followups?: DispositionFollowup[];
     children?: Disposition[];
     current_user_recipient?: DispositionRecipient | null;
+}
+
+export interface MonitoringDisposition extends Disposition {
+    node_count: number;
+    active_recipients: Array<{
+        id?: number | null;
+        name?: string | null;
+        status: string;
+        unit?: string | null;
+        position?: string | null;
+    }>;
+    active_units: Array<{
+        id: number;
+        name: string;
+    }>;
+    overdue_nodes_count: number;
+    due_today_nodes_count: number;
+    latest_deadline?: string | null;
+    active_child_count: number;
 }
 
 export interface ActivityTimelineItem {

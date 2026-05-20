@@ -73,7 +73,7 @@ export default function Categories({ categories }: Props) {
     return (
         <MasterDataPage
             title="Kategori Surat"
-            description="Kelola klasifikasi surat yang dipakai pada surat masuk dan surat keluar."
+            description="Kelola klasifikasi naskah untuk penyusunan surat keluar dan penomoran surat resmi."
             pageTitle="Master Data Kategori Surat"
         >
             <SectionCard

@@ -19,7 +19,7 @@ export default function Show({ letter, activities }: Props) {
             header={
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                        <p className="text-sm font-medium text-slate-500">Surat Keluar</p>
+                        <p className="text-sm font-medium text-slate-500">Penyusunan Surat</p>
                         <h1 className="mt-1 text-2xl font-semibold tracking-normal">{letter.perihal}</h1>
                         <p className="mt-1 text-sm text-slate-500">
                             {letter.nomor_surat_keluar} - {letter.createdBy?.name ?? 'Sistem'}
@@ -29,7 +29,7 @@ export default function Show({ letter, activities }: Props) {
                 </div>
             }
         >
-            <Head title={`Detail ${letter.nomor_surat_keluar}`} />
+            <Head title={`Detail Penyusunan ${letter.nomor_surat_keluar}`} />
 
             <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
                 <section className="space-y-6">
@@ -62,7 +62,7 @@ export default function Show({ letter, activities }: Props) {
                                         className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
                                     >
                                         <FileText className="h-4 w-4" />
-                                        Edit Surat
+                                        Perbarui Draft
                                     </Link>
                                 )}
                             </div>
@@ -99,7 +99,7 @@ export default function Show({ letter, activities }: Props) {
 
                     <Card>
                         <CardHeader className="border-b border-slate-200">
-                            <CardTitle>Timeline Approval</CardTitle>
+                            <CardTitle>Riwayat Persetujuan</CardTitle>
                         </CardHeader>
                         <CardContent className="pt-5">
                             <div className="space-y-4">
@@ -149,7 +149,7 @@ export default function Show({ letter, activities }: Props) {
                 <aside className="space-y-4">
                     <Card>
                         <CardHeader className="border-b border-slate-200">
-                            <CardTitle>Ringkasan Approval</CardTitle>
+                            <CardTitle>Ringkasan Persetujuan</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4 pt-5 text-sm text-slate-600">
                             <InfoBlock label="Status approval" value={letter.status.replace(/_/g, ' ')} />

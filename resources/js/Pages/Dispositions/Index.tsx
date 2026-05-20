@@ -15,7 +15,7 @@ import {
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Disposition, Option, Paginator } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { Eye, Plus, RotateCcw, Search } from 'lucide-react';
+import { Eye, Radar, RotateCcw, Search } from 'lucide-react';
 
 type Props = {
     dispositions: Paginator<Disposition>;
@@ -41,28 +41,28 @@ export default function Index({ dispositions, filters, statuses }: Props) {
             header={
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <p className="text-sm font-medium text-slate-500">Persuratan</p>
-                        <h1 className="mt-1 text-2xl font-semibold tracking-normal">Disposisi</h1>
+                        <p className="text-sm font-medium text-slate-500">Disposisi</p>
+                        <h1 className="mt-1 text-2xl font-semibold tracking-normal">Tindak Lanjut Disposisi</h1>
                         <p className="mt-1 text-sm text-slate-500">
                             Pantau instruksi, penerima, batas waktu, dan tindak lanjut.
                         </p>
                     </div>
-                    <Button asChild>
-                        <Link href={route('dispositions.create')}>
-                            <Plus className="h-4 w-4" />
-                            Buat Disposisi
+                    <Button asChild variant="outline">
+                        <Link href={route('dispositions.monitor')}>
+                            <Radar className="h-4 w-4" />
+                            Monitor Disposisi
                         </Link>
                     </Button>
                 </div>
             }
         >
-            <Head title="Disposisi" />
+            <Head title="Tindak Lanjut Disposisi" />
 
             <Card>
                 <CardHeader className="border-b border-slate-200 pb-4">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                         <div>
-                            <CardTitle>Daftar Disposisi</CardTitle>
+                            <CardTitle>Daftar Tindak Lanjut</CardTitle>
                             <p className="mt-1 text-sm text-slate-500">
                                 {dispositions.total} disposisi tercatat dalam sistem.
                             </p>

@@ -14,6 +14,8 @@ import {
     FileOutput,
     GraduationCap,
     LayoutDashboard,
+    PanelTopOpen,
+    Radar,
     Menu,
     Search,
     Send,
@@ -22,25 +24,71 @@ import {
 } from 'lucide-react';
 import { PropsWithChildren, ReactNode, useEffect, useState } from 'react';
 
-const navigation = [
-    { name: 'Dashboard', href: 'dashboard', active: 'dashboard', icon: LayoutDashboard },
-    { name: 'Surat Masuk', href: 'incoming-letters.index', active: 'incoming-letters.*', icon: FileInput },
-    { name: 'Disposisi', href: 'dispositions.index', active: 'dispositions.*', icon: Send },
-    { name: 'Surat Keluar', href: 'outgoing-letters.index', active: 'outgoing-letters.*', icon: FileOutput },
-    { name: 'Persetujuan Surat', href: 'outgoing-letters.approvals', active: 'outgoing-letters.approvals', icon: ShieldCheck },
-    { name: 'Arsip', href: 'archives.index', active: 'archives.*', icon: Archive },
+const navigationSections = [
     {
-        name: 'Master Data',
-        active: 'master-data.*',
-        icon: Database,
-        permission: 'manage master data',
-        children: masterDataNavigation.map((item) => ({
-            name: item.label,
-            href: item.route,
-            active: item.route,
-        })),
+        title: 'Ringkasan',
+        items: [{ name: 'Dashboard', href: 'dashboard', active: 'dashboard', icon: LayoutDashboard }],
     },
-    { name: 'Users', href: 'users.index', active: 'users.*', icon: Users, permission: 'manage users' },
+    {
+        title: 'Penerimaan',
+        items: [{ name: 'Penerimaan Surat', href: 'incoming-letters.index', active: 'incoming-letters.*', icon: FileInput }],
+    },
+    {
+        title: 'Disposisi',
+        items: [
+            {
+                name: 'Tindak Lanjut',
+                href: 'dispositions.index',
+                active: 'dispositions.index',
+                icon: Send,
+                permission: 'view disposition',
+            },
+            {
+                name: 'Monitor Disposisi',
+                href: 'dispositions.monitor',
+                active: 'dispositions.monitor',
+                icon: Radar,
+                permission: 'view disposition',
+            },
+        ],
+    },
+    {
+        title: 'Penyusunan',
+        items: [
+            { name: 'Penyusunan Surat', href: 'outgoing-letters.index', active: 'outgoing-letters.*', icon: FileOutput },
+            {
+                name: 'Inbox Persetujuan',
+                href: 'outgoing-letters.approvals',
+                active: 'outgoing-letters.approvals',
+                icon: ShieldCheck,
+            },
+            {
+                name: 'Monitor Persetujuan',
+                href: 'outgoing-letters.monitor',
+                active: 'outgoing-letters.monitor',
+                icon: PanelTopOpen,
+                permission: 'view outgoing letters',
+            },
+        ],
+    },
+    {
+        title: 'Arsip dan Referensi',
+        items: [
+            { name: 'Arsip Digital', href: 'archives.index', active: 'archives.*', icon: Archive },
+            {
+                name: 'Master Data',
+                active: 'master-data.*',
+                icon: Database,
+                permission: 'manage master data',
+                children: masterDataNavigation.map((item) => ({
+                    name: item.label,
+                    href: item.route,
+                    active: item.route,
+                })),
+            },
+            { name: 'Manajemen User', href: 'users.index', active: 'users.*', icon: Users, permission: 'manage users' },
+        ],
+    },
 ];
 
 export default function Authenticated({
@@ -95,7 +143,7 @@ export default function Authenticated({
                         </div>
                         <div>
                             <Link href={route('dashboard')} className="block text-sm font-semibold tracking-wide">
-                                E-Surat Disposisi
+                                E-Surat Internal
                             </Link>
                             <p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.22em] text-orange-100">
                                 UNUKALTIM
@@ -109,19 +157,30 @@ export default function Authenticated({
                                 <GraduationCap className="h-4 w-4" />
                             </div>
                             <div>
-                                <p className="text-xs font-semibold text-white">Panel Administrasi</p>
+                                <p className="text-xs font-semibold text-white">Alur Kerja Persuratan</p>
                                 <p className="mt-1 text-xs leading-5 text-cyan-50/80">
-                                    Tata naskah dinas, disposisi, dan arsip kampus.
+                                    Penerimaan surat, disposisi berjenjang, persetujuan, dan arsip kampus.
                                 </p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <nav className="flex-1 space-y-1 px-3 py-4">
-                    {navigation
-                        .filter((item) => !item.permission || auth.permissions.includes(item.permission))
-                        .map((item) => {
+                <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-4">
+                    {navigationSections.map((section) => {
+                        const items = section.items.filter((item) => !item.permission || auth.permissions.includes(item.permission));
+
+                        if (items.length === 0) {
+                            return null;
+                        }
+
+                        return (
+                            <div key={section.title}>
+                                <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-50/45">
+                                    {section.title}
+                                </p>
+                                <div className="space-y-1">
+                                    {items.map((item) => {
                             const Icon = item.icon;
                             const hasApprovalBadge =
                                 item.href === 'outgoing-letters.approvals' && notifications.pending_approvals_count > 0;
@@ -131,99 +190,107 @@ export default function Authenticated({
                                       route().current('outgoing-letters.create') ||
                                       route().current('outgoing-letters.edit') ||
                                       route().current('outgoing-letters.show')
+                                    : item.href === 'dispositions.index'
+                                      ? route().current('dispositions.index') ||
+                                        route().current('dispositions.create') ||
+                                        route().current('dispositions.show')
                                     : route().current(item.active);
 
-                            if (item.children) {
-                                return (
-                                    <div key={item.name} className="space-y-1">
-                                        <button
-                                            type="button"
-                                            onClick={() => setMasterDataOpen((open) => !open)}
-                                            className={cn(
-                                                'group relative flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium transition-all',
-                                                active
-                                                    ? 'bg-white text-cyan-950 shadow-lg shadow-cyan-950/20'
-                                                    : 'text-cyan-50/80 hover:bg-white/10 hover:text-white',
-                                            )}
-                                        >
-                                            <span
-                                                className={cn(
-                                                    'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
-                                                    active
-                                                        ? 'bg-[#ff7900] text-white'
-                                                        : 'bg-white/10 text-cyan-50 group-hover:bg-[#ff7900]/25 group-hover:text-orange-100',
-                                                )}
-                                            >
-                                                <Icon className="h-4 w-4" />
-                                            </span>
-                                            <span className="flex-1 text-left">{item.name}</span>
-                                            <ChevronDown
-                                                className={cn(
-                                                    'h-4 w-4 transition-transform',
-                                                    masterDataOpen && 'rotate-180',
-                                                )}
-                                            />
-                                        </button>
-
-                                        {masterDataOpen && (
-                                            <div className="ml-6 space-y-1 border-l border-white/10 pl-5">
-                                                {item.children.map((child) => {
-                                                    const childActive = route().current(child.active);
-
-                                                    return (
-                                                        <Link
-                                                            key={child.href}
-                                                            href={route(child.href)}
-                                                            onClick={() => setSidebarOpen(false)}
+                                        if (item.children) {
+                                            return (
+                                                <div key={item.name} className="space-y-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setMasterDataOpen((open) => !open)}
+                                                        className={cn(
+                                                            'group relative flex h-11 w-full items-center gap-3 rounded-lg px-3 text-sm font-medium transition-all',
+                                                            active
+                                                                ? 'bg-white text-cyan-950 shadow-lg shadow-cyan-950/20'
+                                                                : 'text-cyan-50/80 hover:bg-white/10 hover:text-white',
+                                                        )}
+                                                    >
+                                                        <span
                                                             className={cn(
-                                                                'flex min-h-[2.5rem] items-center rounded-lg px-3 text-sm transition-all',
-                                                                childActive
-                                                                    ? 'bg-white/10 font-medium text-white'
-                                                                    : 'text-cyan-50/75 hover:bg-white/10 hover:text-white',
+                                                                'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+                                                                active
+                                                                    ? 'bg-[#ff7900] text-white'
+                                                                    : 'bg-white/10 text-cyan-50 group-hover:bg-[#ff7900]/25 group-hover:text-orange-100',
                                                             )}
                                                         >
-                                                            {child.name}
-                                                        </Link>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            }
+                                                            <Icon className="h-4 w-4" />
+                                                        </span>
+                                                        <span className="flex-1 text-left">{item.name}</span>
+                                                        <ChevronDown
+                                                            className={cn(
+                                                                'h-4 w-4 transition-transform',
+                                                                masterDataOpen && 'rotate-180',
+                                                            )}
+                                                        />
+                                                    </button>
 
-                            return (
-                                <Link
-                                    key={item.name}
-                                    href={route(item.href)}
-                                    onClick={() => setSidebarOpen(false)}
-                                    className={cn(
-                                        'group relative flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-all',
-                                        active
-                                            ? 'bg-white text-cyan-950 shadow-lg shadow-cyan-950/20'
-                                            : 'text-cyan-50/80 hover:bg-white/10 hover:text-white',
-                                    )}
-                                >
-                                    <span
-                                        className={cn(
-                                            'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
-                                            active
-                                                ? 'bg-[#ff7900] text-white'
-                                                : 'bg-white/10 text-cyan-50 group-hover:bg-[#ff7900]/25 group-hover:text-orange-100',
-                                        )}
-                                    >
-                                        <Icon className="h-4 w-4" />
-                                    </span>
-                                    {item.name}
-                                    {hasApprovalBadge && (
-                                        <span className="ml-auto inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-[#ff7900] px-1.5 text-[10px] font-semibold leading-5 text-white">
-                                            {notifications.pending_approvals_count > 9 ? '9+' : notifications.pending_approvals_count}
-                                        </span>
-                                    )}
-                                    {active && !hasApprovalBadge && <span className="ml-auto h-2 w-2 rounded-full bg-[#ff7900]" />}
-                                </Link>
-                            );
-                        })}
+                                                    {masterDataOpen && (
+                                                        <div className="ml-6 space-y-1 border-l border-white/10 pl-5">
+                                                            {item.children.map((child) => {
+                                                                const childActive = route().current(child.active);
+
+                                                                return (
+                                                                    <Link
+                                                                        key={child.href}
+                                                                        href={route(child.href)}
+                                                                        onClick={() => setSidebarOpen(false)}
+                                                                        className={cn(
+                                                                            'flex min-h-[2.5rem] items-center rounded-lg px-3 text-sm transition-all',
+                                                                            childActive
+                                                                                ? 'bg-white/10 font-medium text-white'
+                                                                                : 'text-cyan-50/75 hover:bg-white/10 hover:text-white',
+                                                                        )}
+                                                                    >
+                                                                        {child.name}
+                                                                    </Link>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        }
+
+                                        return (
+                                            <Link
+                                                key={item.name}
+                                                href={route(item.href)}
+                                                onClick={() => setSidebarOpen(false)}
+                                                className={cn(
+                                                    'group relative flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-all',
+                                                    active
+                                                        ? 'bg-white text-cyan-950 shadow-lg shadow-cyan-950/20'
+                                                        : 'text-cyan-50/80 hover:bg-white/10 hover:text-white',
+                                                )}
+                                            >
+                                                <span
+                                                    className={cn(
+                                                        'flex h-7 w-7 items-center justify-center rounded-md transition-colors',
+                                                        active
+                                                            ? 'bg-[#ff7900] text-white'
+                                                            : 'bg-white/10 text-cyan-50 group-hover:bg-[#ff7900]/25 group-hover:text-orange-100',
+                                                    )}
+                                                >
+                                                    <Icon className="h-4 w-4" />
+                                                </span>
+                                                {item.name}
+                                                {hasApprovalBadge && (
+                                                    <span className="ml-auto inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-[#ff7900] px-1.5 text-[10px] font-semibold leading-5 text-white">
+                                                        {notifications.pending_approvals_count > 9 ? '9+' : notifications.pending_approvals_count}
+                                                    </span>
+                                                )}
+                                                {active && !hasApprovalBadge && <span className="ml-auto h-2 w-2 rounded-full bg-[#ff7900]" />}
+                                            </Link>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })}
                 </nav>
 
                 <div className="border-t border-white/10 p-3">

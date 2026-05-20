@@ -94,8 +94,8 @@ export default function Edit({ letter, categories, signatories }: Props) {
             header={
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <p className="text-sm font-medium text-slate-500">Surat Keluar</p>
-                        <h1 className="mt-1 text-2xl font-semibold tracking-normal">Edit Surat Keluar</h1>
+                        <p className="text-sm font-medium text-slate-500">Penyusunan Surat</p>
+                        <h1 className="mt-1 text-2xl font-semibold tracking-normal">Perbarui Draft Surat</h1>
                         <p className="mt-1 text-sm text-slate-500">
                             Nomor surat akan menyesuaikan kategori dan tanggal surat secara otomatis.
                         </p>
@@ -109,7 +109,7 @@ export default function Edit({ letter, categories, signatories }: Props) {
                 </div>
             }
         >
-            <Head title={`Edit ${letter.nomor_surat_keluar}`} />
+            <Head title={`Perbarui ${letter.nomor_surat_keluar}`} />
 
             <form onSubmit={submit} className="grid gap-6">
                 <Card>
@@ -218,7 +218,7 @@ export default function Edit({ letter, categories, signatories }: Props) {
                         {form.data.content_mode === 'generate' ? (
                             <Card>
                                 <CardHeader className="border-b border-slate-200">
-                                    <CardTitle>Konten Surat</CardTitle>
+                                    <CardTitle>Naskah Surat</CardTitle>
                                 </CardHeader>
                                 <CardContent className="grid gap-5 pt-5 md:grid-cols-2">
                                     <Field label="Lampiran" error={form.errors.lampiran_text}>
@@ -317,7 +317,7 @@ export default function Edit({ letter, categories, signatories }: Props) {
                     <div className="space-y-6">
                         <Card>
                             <CardHeader className="border-b border-slate-200">
-                                <CardTitle>Status & Aksi</CardTitle>
+                                <CardTitle>Status dan Penyimpanan</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-5 pt-5">
                                 {letter.signatory?.name && (

@@ -17,6 +17,8 @@ use App\Notifications\DispositionCreated;
 use App\Notifications\DispositionStatusUpdated;
 use App\Services\DispositionForwardScopeService;
 use App\Services\DispositionWorkflowService;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -62,19 +64,126 @@ class DispositionController extends Controller
         ]);
     }
 
-    public function create(Request $request): Response
+    public function create(Request $request): Response|RedirectResponse
     {
         $this->authorize('create', Disposition::class);
 
+        $selectedIncomingLetterId = $request->integer('incoming_letter_id');
+
+        if (!$selectedIncomingLetterId) {
+            return redirect()
+                ->route('incoming-letters.index')
+                ->with('error', 'Pembuatan disposisi awal hanya bisa dilakukan dari menu Penerimaan Surat.');
+        }
+
+        $letter = IncomingLetter::with(['nature'])
+            ->whereIn('status', [
+                IncomingLetterStatus::Baru->value,
+                IncomingLetterStatus::Didisposisi->value,
+                IncomingLetterStatus::Diproses->value,
+            ])
+            ->find($selectedIncomingLetterId);
+
+        if (!$letter) {
+            return redirect()
+                ->route('incoming-letters.index')
+                ->with('error', 'Surat masuk yang dipilih tidak tersedia untuk dibuatkan disposisi.');
+        }
+
         return Inertia::render('Dispositions/Create', [
-            'letters' => IncomingLetter::with(['nature', 'category'])
-                ->whereIn('status', [IncomingLetterStatus::Baru->value, IncomingLetterStatus::Didisposisi->value, IncomingLetterStatus::Diproses->value])
-                ->latest('tanggal_diterima')
-                ->limit(50)
-                ->get(),
+            'letter' => $letter,
             'users' => User::with(['unit', 'position'])->where('is_active', true)->orderBy('name')->get(),
             'templates' => DispositionInstruction::orderBy('judul')->get(),
-            'selectedIncomingLetterId' => $request->integer('incoming_letter_id') ?: null,
+            'selectedIncomingLetterId' => $selectedIncomingLetterId,
+        ]);
+    }
+
+    public function monitor(Request $request): Response
+    {
+        $this->authorize('viewAny', Disposition::class);
+
+        $user = $request->user();
+        $baseQuery = Disposition::query()
+            ->with([
+                'incomingLetter.nature',
+                'sender.unit',
+                'sender.position',
+                'recipients.recipient.unit',
+                'recipients.recipient.position',
+                'childrenRecursive',
+            ])
+            ->whereNull('parent_disposition_id')
+            ->when(!$user->can('view all dispositions'), function ($query) use ($user) {
+                $query->where(function ($query) use ($user) {
+                    $query->where('sender_id', $user->id)
+                        ->orWhereHas('recipients', fn ($recipient) => $recipient->where('recipient_id', $user->id));
+                });
+            })
+            ->when($request->search, function ($query, string $search) {
+                $query->where(function ($query) use ($search) {
+                    $query->whereHas('incomingLetter', function ($letter) use ($search) {
+                        $letter->where('perihal', 'like', "%{$search}%")
+                            ->orWhere('nomor_agenda', 'like', "%{$search}%");
+                    })->orWhereHas('sender', fn ($sender) => $sender->where('name', 'like', "%{$search}%"));
+                });
+            })
+            ->when(
+                $request->status,
+                fn ($query, string $status) => $query->where('status', $status),
+                fn ($query) => $query->where('status', '!=', DispositionStatus::Selesai->value),
+            )
+            ->latest('tanggal_disposisi');
+
+        $monitored = $baseQuery
+            ->get()
+            ->map(fn (Disposition $disposition) => $this->presentMonitoringDisposition($disposition));
+
+        if ($request->filled('unit_id')) {
+            $unitId = (int) $request->string('unit_id')->toString();
+
+            $monitored = $monitored->filter(fn (array $item) => collect($item['active_units'])->contains('id', $unitId))->values();
+        }
+
+        if ($request->boolean('overdue')) {
+            $monitored = $monitored->filter(fn (array $item) => $item['overdue_nodes_count'] > 0)->values();
+        }
+
+        $summary = [
+            'total' => $monitored->count(),
+            'overdue' => $monitored->where('overdue_nodes_count', '>', 0)->count(),
+            'due_today' => $monitored->where('due_today_nodes_count', '>', 0)->count(),
+            'forwarded' => $monitored->where('node_count', '>', 1)->count(),
+            'active_assignees' => $monitored->sum(fn (array $item) => count($item['active_recipients'])),
+        ];
+
+        $page = max(1, (int) $request->integer('page', 1));
+        $perPage = 10;
+        $paginated = new LengthAwarePaginator(
+            $monitored->forPage($page, $perPage)->values(),
+            $monitored->count(),
+            $perPage,
+            $page,
+            [
+                'path' => route('dispositions.monitor'),
+                'query' => $request->query(),
+            ],
+        );
+
+        return Inertia::render('Dispositions/Monitor', [
+            'dispositions' => $paginated,
+            'filters' => $request->only(['search', 'status', 'unit_id', 'overdue']),
+            'statuses' => $this->statuses(),
+            'summary' => $summary,
+            'units' => User::query()
+                ->with('unit')
+                ->where('is_active', true)
+                ->whereNotNull('unit_id')
+                ->get()
+                ->pluck('unit')
+                ->filter()
+                ->unique('id')
+                ->sortBy('nama')
+                ->values(),
         ]);
     }
 
@@ -122,7 +231,6 @@ class DispositionController extends Controller
 
         $disposition->load([
             'incomingLetter.nature',
-            'incomingLetter.category',
             'sender',
             'parent.sender',
             'recipients.recipient.unit',
@@ -160,6 +268,8 @@ class DispositionController extends Controller
             ]);
         }
 
+        $isForwardLocked = $disposition->hasBeenForwardedBy($request->user());
+        $canUpdateStatus = $request->user()->can('update', $disposition);
         $forwardUsers = $request->user()->can('forward', $disposition)
             ? $this->forwardScope->eligibleRecipients($request->user(), $disposition)
             : collect();
@@ -168,7 +278,6 @@ class DispositionController extends Controller
             'disposition' => $this->presentDisposition(
                 $disposition->fresh([
                     'incomingLetter.nature',
-                    'incomingLetter.category',
                     'sender',
                     'parent.sender',
                     'recipients.recipient.unit',
@@ -188,6 +297,9 @@ class DispositionController extends Controller
             'forwardUsers' => $forwardUsers,
             'templates' => DispositionInstruction::orderBy('judul')->get(),
             'canForward' => $request->user()->can('forward', $disposition) && $forwardUsers->isNotEmpty(),
+            'canUpdateStatus' => $canUpdateStatus,
+            'canAddFollowup' => $canUpdateStatus,
+            'isForwardLocked' => $isForwardLocked,
             'activities' => ActivityLog::with('user')
                 ->where('subject_type', $disposition::class)
                 ->where('subject_id', $disposition->id)
@@ -358,5 +470,69 @@ class DispositionController extends Controller
             : null;
 
         return $data;
+    }
+
+    private function presentMonitoringDisposition(Disposition $disposition): array
+    {
+        $tree = $this->flattenDispositionTree($disposition);
+        $activeRecipients = $tree
+            ->flatMap(fn (Disposition $item) => $item->recipients)
+            ->filter(fn ($recipient) => $recipient->status !== DispositionStatus::Selesai)
+            ->map(fn ($recipient) => [
+                'id' => $recipient->recipient?->id,
+                'name' => $recipient->recipient?->name,
+                'status' => $recipient->status->value,
+                'unit' => $recipient->recipient?->unit?->nama,
+                'position' => $recipient->recipient?->position?->nama,
+            ])
+            ->unique('id')
+            ->values();
+
+        $activeUnits = $activeRecipients
+            ->filter(fn (array $recipient) => filled($recipient['unit']))
+            ->map(fn (array $recipient) => [
+                'id' => $tree
+                    ->flatMap(fn (Disposition $item) => $item->recipients)
+                    ->first(fn ($item) => $item->recipient?->name === $recipient['name'])?->recipient?->unit?->id,
+                'name' => $recipient['unit'],
+            ])
+            ->filter(fn (array $unit) => filled($unit['id']))
+            ->unique('id')
+            ->values();
+
+        $overdueNodes = $tree->filter(
+            fn (Disposition $item) => $item->status !== DispositionStatus::Selesai
+                && $item->batas_waktu?->isBefore(today()),
+        );
+        $dueTodayNodes = $tree->filter(
+            fn (Disposition $item) => $item->status !== DispositionStatus::Selesai
+                && $item->batas_waktu?->isToday(),
+        );
+
+        $latestDeadline = $tree
+            ->pluck('batas_waktu')
+            ->filter()
+            ->sort()
+            ->first();
+
+        return [
+            ...$this->presentDisposition($disposition),
+            'node_count' => $tree->count(),
+            'active_recipients' => $activeRecipients->all(),
+            'active_units' => $activeUnits->all(),
+            'overdue_nodes_count' => $overdueNodes->count(),
+            'due_today_nodes_count' => $dueTodayNodes->count(),
+            'latest_deadline' => $latestDeadline?->toDateString(),
+            'active_child_count' => $tree->where('status', '!=', DispositionStatus::Selesai)->count(),
+        ];
+    }
+
+    private function flattenDispositionTree(Disposition $disposition): Collection
+    {
+        return collect([$disposition])->concat(
+            $disposition->childrenRecursive->flatMap(
+                fn (Disposition $child) => $this->flattenDispositionTree($child),
+            ),
+        );
     }
 }

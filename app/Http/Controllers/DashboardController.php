@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\DispositionStatus;
 use App\Enums\IncomingLetterStatus;
+use App\Enums\OutgoingLetterStatus;
 use App\Models\Disposition;
 use App\Models\IncomingLetter;
 use App\Models\OutgoingLetter;
@@ -45,18 +46,62 @@ class DashboardController extends Controller
                 'completed_this_month' => (clone $dispositionQuery)->where('status', DispositionStatus::Selesai->value)->whereMonth('updated_at', now()->month)->count(),
                 'undisposed_letters' => IncomingLetter::where('status', IncomingLetterStatus::Baru->value)->count(),
             ],
+            'monitoring' => [
+                'dispositions' => [
+                    'overdue' => (clone $dispositionQuery)
+                        ->where('status', '!=', DispositionStatus::Selesai->value)
+                        ->whereDate('batas_waktu', '<', now()->toDateString())
+                        ->count(),
+                    'due_today' => (clone $dispositionQuery)
+                        ->where('status', '!=', DispositionStatus::Selesai->value)
+                        ->whereDate('batas_waktu', now()->toDateString())
+                        ->count(),
+                    'forwarded' => (clone $dispositionQuery)
+                        ->whereHas('children')
+                        ->count(),
+                ],
+                'approvals' => [
+                    'pending' => OutgoingLetter::query()
+                        ->where('content_mode', 'generate')
+                        ->where('status', OutgoingLetterStatus::MenungguPersetujuan->value)
+                        ->count(),
+                    'revision' => OutgoingLetter::query()
+                        ->where('content_mode', 'generate')
+                        ->where('status', OutgoingLetterStatus::PerluRevisi->value)
+                        ->count(),
+                    'approved' => OutgoingLetter::query()
+                        ->where('content_mode', 'generate')
+                        ->where('status', OutgoingLetterStatus::Disetujui->value)
+                        ->count(),
+                    'stuck' => OutgoingLetter::query()
+                        ->where('content_mode', 'generate')
+                        ->where('status', OutgoingLetterStatus::MenungguPersetujuan->value)
+                        ->where('approval_requested_at', '<=', now()->subDays(2))
+                        ->count(),
+                ],
+            ],
             'monthlyLetters' => $monthlyLetters,
             'statusDistribution' => collect(DispositionStatus::cases())->map(fn ($status) => [
                 'name' => $status->label(),
                 'value' => Disposition::whereNull('parent_disposition_id')->where('status', $status->value)->count(),
             ]),
-            'latestIncomingLetters' => IncomingLetter::with(['nature', 'category'])
+            'latestIncomingLetters' => IncomingLetter::with(['nature'])
                 ->latest('tanggal_diterima')
                 ->limit(5)
                 ->get(),
             'latestDispositions' => Disposition::with(['incomingLetter', 'sender', 'recipients.recipient'])
                 ->whereNull('parent_disposition_id')
                 ->latest('tanggal_disposisi')
+                ->limit(5)
+                ->get(),
+            'latestApprovals' => OutgoingLetter::with(['createdBy', 'signatory.position', 'signatory.unit'])
+                ->where('content_mode', 'generate')
+                ->whereIn('status', [
+                    OutgoingLetterStatus::MenungguPersetujuan->value,
+                    OutgoingLetterStatus::PerluRevisi->value,
+                    OutgoingLetterStatus::Disetujui->value,
+                ])
+                ->orderByRaw('coalesce(approval_requested_at, updated_at) desc')
                 ->limit(5)
                 ->get(),
             'alerts' => [
@@ -68,6 +113,13 @@ class DashboardController extends Controller
                     ->get(),
                 'staleLetters' => IncomingLetter::where('status', IncomingLetterStatus::Baru->value)
                     ->whereDate('tanggal_diterima', '<=', now()->subDays(3)->toDateString())
+                    ->limit(5)
+                    ->get(),
+                'stuckApprovals' => OutgoingLetter::with(['createdBy', 'signatory'])
+                    ->where('content_mode', 'generate')
+                    ->where('status', OutgoingLetterStatus::MenungguPersetujuan->value)
+                    ->where('approval_requested_at', '<=', now()->subDays(2))
+                    ->orderBy('approval_requested_at')
                     ->limit(5)
                     ->get(),
             ],

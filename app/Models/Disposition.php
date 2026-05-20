@@ -49,6 +49,16 @@ class Disposition extends Model
         return $this->hasMany(self::class, 'parent_disposition_id');
     }
 
+    public function childrenRecursive(): HasMany
+    {
+        return $this->children()->with([
+            'sender',
+            'recipients.recipient.unit',
+            'recipients.recipient.position',
+            'childrenRecursive',
+        ]);
+    }
+
     public function recipients(): HasMany
     {
         return $this->hasMany(DispositionRecipient::class);
@@ -57,5 +67,12 @@ class Disposition extends Model
     public function followups(): HasMany
     {
         return $this->hasMany(DispositionFollowup::class);
+    }
+
+    public function hasBeenForwardedBy(User|int $user): bool
+    {
+        $userId = $user instanceof User ? $user->id : $user;
+
+        return $this->children()->where('sender_id', $userId)->exists();
     }
 }
