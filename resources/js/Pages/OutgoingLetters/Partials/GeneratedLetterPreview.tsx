@@ -23,21 +23,24 @@ export default function GeneratedLetterPreview({ data }: { data: PreviewData }) 
     const closingParagraphs = toParagraphs(data.penutup_text);
     const attachmentItems = toLineItems(data.lampiran_detail);
     const ccItems = toLineItems(data.tembusan_text);
+    const letterDate = formatDate(data.tanggal_surat);
 
     return (
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
-            <div className="mx-auto aspect-[210/297] w-full max-w-[420px] bg-white px-8 py-7 text-[11px] leading-5 text-slate-900 shadow-sm">
+            <div className="relative mx-auto aspect-[210/297] w-full max-w-[420px] bg-white px-8 pb-16 pt-5 text-[11px] leading-5 text-slate-900 shadow-sm">
                 <img src="/brand/header-kop.png" alt="Header kop surat UNU Kaltim" className="w-full" />
 
-                <div className="mt-7">
-                    <table className="w-full text-left align-top">
-                        <tbody>
-                            <MetaRow label="Tanggal" value={formatDate(data.tanggal_surat)} />
-                            <MetaRow label="Nomor" value={data.nomor_surat_keluar || '-'} />
-                            <MetaRow label="Lampiran" value={data.lampiran_text || '-'} />
-                            <MetaRow label="Hal" value={data.perihal || '-'} bold />
-                        </tbody>
-                    </table>
+                <div className="mt-7 flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                        <table className="w-full text-left align-top">
+                            <tbody>
+                                <MetaRow label="Nomor" value={data.nomor_surat_keluar || '-'} />
+                                <MetaRow label="Perihal" value={data.perihal || '-'} />
+                                <MetaRow label="Lampiran" value={data.lampiran_text || '-'} />
+                            </tbody>
+                        </table>
+                    </div>
+                    <p className="shrink-0 whitespace-nowrap text-right">Samarinda, {letterDate}</p>
                 </div>
 
                 <div className="mt-7 space-y-4">
@@ -84,8 +87,7 @@ export default function GeneratedLetterPreview({ data }: { data: PreviewData }) 
                     </div>
 
                     <div className="ml-auto w-[11rem] pt-2">
-                        <p>Kutai Timur, {formatDate(data.tanggal_surat)}</p>
-                        <p className="text-slate-700">an. Rektor,</p>
+                        <p>Kutai Timur, {letterDate}</p>
                         <p>{data.penandatangan_jabatan || '-'}</p>
                         <p className="mt-16 font-semibold underline underline-offset-2">
                             {data.penandatangan_nama || '-'}
@@ -104,7 +106,7 @@ export default function GeneratedLetterPreview({ data }: { data: PreviewData }) 
                     )}
                 </div>
 
-                <div className="mt-7">
+                <div className="absolute bottom-7 left-8 right-8">
                     <img src="/brand/footer-kop.png" alt="Footer kop surat UNU Kaltim" className="w-full" />
                 </div>
             </div>

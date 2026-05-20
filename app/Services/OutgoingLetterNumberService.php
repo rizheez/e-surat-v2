@@ -14,7 +14,7 @@ class OutgoingLetterNumberService
         $sequence ??= $this->nextSequence($date, $letter);
 
         return sprintf(
-            '%s/%d/UNU-KT/%d/%d',
+            '%s/%d/UNU-KT/%02d/%d',
             $category->kode,
             $sequence,
             (int) $date->format('n'),
