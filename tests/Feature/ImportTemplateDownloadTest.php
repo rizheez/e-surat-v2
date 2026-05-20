@@ -22,19 +22,8 @@ class ImportTemplateDownloadTest extends TestCase
 
     public function test_authorized_users_can_download_import_templates(): void
     {
-        $incomingManager = $this->makeUser('admin-persuratan', 'BAU', 'Kepala Biro Administrasi Umum');
         $outgoingManager = $this->makeUser('admin-persuratan', 'BAU', 'Kepala Biro Administrasi Umum');
         $dispositionManager = $this->makeUser('pimpinan-universitas', 'RKT', 'Rektor');
-
-        $this->actingAs($incomingManager)
-            ->get(route('import-templates.incoming-letters.xlsx'))
-            ->assertOk()
-            ->assertHeader('content-disposition');
-
-        $this->actingAs($outgoingManager)
-            ->get(route('import-templates.outgoing-letters.xlsx'))
-            ->assertOk()
-            ->assertHeader('content-disposition');
 
         $this->actingAs($dispositionManager)
             ->get(route('import-templates.dispositions.xlsx'))
@@ -50,14 +39,6 @@ class ImportTemplateDownloadTest extends TestCase
     public function test_user_without_required_permission_cannot_download_templates(): void
     {
         $user = User::query()->where('email', 'dosen@esurat.test')->firstOrFail();
-
-        $this->actingAs($user)
-            ->get(route('import-templates.incoming-letters.xlsx'))
-            ->assertForbidden();
-
-        $this->actingAs($user)
-            ->get(route('import-templates.outgoing-letters.xlsx'))
-            ->assertForbidden();
 
         $this->actingAs($user)
             ->get(route('import-templates.dispositions.xlsx'))

@@ -83,7 +83,6 @@ export default function Index({ letters, filters, categories, statuses }: Props)
     }
 
     const exportUrl = route('reports.outgoing-letters.xlsx', filters);
-    const templateUrl = route('import-templates.outgoing-letters.xlsx');
 
     return (
         <AuthenticatedLayout
@@ -97,12 +96,6 @@ export default function Index({ letters, filters, categories, statuses }: Props)
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                        <Button asChild variant="outline">
-                            <a href={templateUrl}>
-                                <Download className="h-4 w-4" />
-                                Download Template
-                            </a>
-                        </Button>
                         {canExportReports && (
                             <Button asChild variant="outline">
                                 <a href={exportUrl}>
