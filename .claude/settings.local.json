@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(php artisan *)",
+      "Bash(bun run *)",
+      "Bash(git add *)",
+      "Bash(git commit -m '*)",
+      "WebSearch",
+      "Bash(bun add *)",
+      "Bash(composer require *)"
+    ]
+  }
+}
